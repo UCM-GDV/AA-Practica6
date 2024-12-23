@@ -16178,7 +16178,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b54459dca25cfd947aa2a536fafe9c89, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  recordMode: 0
+  recordMode: 1
   perception: {fileID: 1910917298}
   kart: {fileID: 1304724376}
   keyboardInput: {fileID: 1304724378}
@@ -16189,7 +16189,7 @@ MonoBehaviour:
   - ray4
   - ray5
   snapshotTime: 0.1
-  csvOutput: ML/Kart_pruebas_mejora.csv
+  csvOutput: ML/Kart_3.csv
   saveWhenFinish: 1
 --- !u!1001 &1687223860
 PrefabInstance:
@@ -18571,7 +18571,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   text: {fileID: 4900000, guid: f6952ac73a22c7e4cb1715e4ec440d53, type: 3}
   model: 0
-  agentEnable: 1
+  agentEnable: 0
   indexToRemove: 08000000
   standarScaler: {fileID: 4900000, guid: 8c2199b07d842af47a17273860919bdb, type: 3}
   testFeedForward: 1

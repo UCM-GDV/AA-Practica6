@@ -1,8 +1,26 @@
+import numpy as np
+import pandas as pd
 from skl2onnx import to_onnx
 from onnx2json import convert
 import pickle
 import json
 
+def cleanData(data, x_columns, y_column):
+    for x_column in x_columns:
+        data[x_column] = data[x_column].apply(lambda x:  str(x).replace('.', '', x.count('.') - 1))
+        data[x_column] = data[x_column].astype(np.float64)
+    data = data.drop(data[data[y_column] == "NONE"].index)
+    return data
+
+def load_data_csv(path,x_columns,y_column):
+    data = pd.read_csv(path)
+    data = cleanData(data, x_columns, y_column)
+    xi = []
+    for x_column in x_columns:
+        xi.append(data[x_column].to_numpy())
+    X = np.array(xi)
+    y = data[y_column]
+    return data, X, y
 
 def ExportONNX_JSON_TO_Custom(onnx_json,mlp):
     graphDic = onnx_json["graph"]
@@ -58,6 +76,7 @@ def export_to_json(model, filename):
 
     with open(filename, 'w') as f:
         json.dump(model_dict, f)
+
 def export_to_txt(model, filename):
     with open(filename, 'w') as f:
         num_layers = len(model.coefs_) + 1
@@ -73,5 +92,3 @@ def export_to_txt(model, filename):
                 f.write(f"name:{param_type}\n")
                 f.write(f"values:{param_values.flatten().tolist()}\n")
             parameter_num += 1
-
-
