@@ -16189,7 +16189,7 @@ MonoBehaviour:
   - ray4
   - ray5
   snapshotTime: 0.1
-  csvOutput: ML/Kart_3.csv
+  csvOutput: ML/Kart_prueba.csv
   saveWhenFinish: 1
 --- !u!1001 &1687223860
 PrefabInstance:
