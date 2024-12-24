@@ -190,7 +190,7 @@ public class MLPModel
         for (int i = 0; i < thetas.Count; ++i)
         {
             ai[i] = HStack(1, ai[i]);
-           // zi.Add(ai[i] dot thetas[i]);
+            zi.Add(DotProductVM( ai[i],thetas[i]));
            // ai.Add(Sigmoid(zi[i]));
         }
 
@@ -200,6 +200,11 @@ public class MLPModel
 
         return result;
     }
+
+
+
+    //If a is an N-D array and b is a 1-D array, it is a sum product over the last axis of a and b.
+
     float[] DotProductVM(float[] vect, float[,] mat)
     {
         //comprobamos que la multiplicacoin se puede realizar 
@@ -219,6 +224,42 @@ public class MLPModel
             product[i] = r;
         }
         return product;
+    }
+
+    float[,] DotProductMM(float[,] matA, float[,] matB)
+    {
+
+        int rA = matA.GetLength(0);
+        int cA = matA.GetLength(1);
+        int rB = matB.GetLength(0);
+        int cB = matB.GetLength(1);
+
+        if (cA != rB)
+        {
+            return null;
+
+        }
+        else
+        {
+            
+            float[,] result = new float[rA, cB];
+            float r = 0;
+            for (int i = 0; i < rA; i++)
+            {
+                for (int j = 0; j < cB; j++)
+                {
+                    r = 0;
+                    for (int k = 0; k < cA; k++)
+                    {
+                       r += matA[i, k] * matB[k, j];
+                    }
+                    result[i, j] = r;
+                }
+            }
+
+            return result;
+        }
+
     }
 
     float[,] TransPose(float[,] mat)
