@@ -190,15 +190,49 @@ public class MLPModel
         for (int i = 0; i < thetas.Count; ++i)
         {
             ai[i] = HStack(1, ai[i]);
-            zi.Add(ai[i] dot thetas[i]);
-            ai.Add(Sigmoid(zi[i]));
+           // zi.Add(ai[i] dot thetas[i]);
+           // ai.Add(Sigmoid(zi[i]));
         }
 
         // Capa de salida
-        zi.Add(ai[thetas.Count - 1] dot thetas[thetas.Count - 1]);
-        ai.Add(Sigmoid(zi[zi.Count - 1]));
+      //  zi.Add(ai[thetas.Count - 1] dot thetas[thetas.Count - 1]);
+        //ai.Add(Sigmoid(zi[zi.Count - 1]));
 
         return result;
+    }
+    float[] DotProductVM(float[] vect, float[,] mat)
+    {
+        //comprobamos que la multiplicacoin se puede realizar 
+        if (vect.Length != mat.GetLength(1))
+        {
+            return null;
+        }
+
+        float[] product = new float[vect.Length] ;
+        for (int i = 0; i < mat.GetLength(0); i++)
+        {
+            float r = 0;
+            for (int j = 0; j < mat.GetLength(1); j++)
+            {
+                r += mat[i, j] * vect[i];
+            }
+            product[i] = r;
+        }
+        return product;
+    }
+
+    float[,] TransPose(float[,] mat)
+    {
+        float[,] matT = new float [mat.GetLength(1),mat.GetLength(0)];
+        for (int i = 0; i < mat.GetLength(0); i++)
+        {
+            for (int j = 0; i < mat.GetLength(1); j++)
+            {
+                matT[j, i] = mat[i, j];
+            }
+        }
+        return matT;
+    
     }
 
     //TODO: implement the conversion from index to actions. You may need to implement several ways of
