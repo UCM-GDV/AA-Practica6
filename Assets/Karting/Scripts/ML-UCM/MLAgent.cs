@@ -27,16 +27,36 @@ public class StandarScaler
         }
     }
 
+    public static float GetStandardDeviation(float[] values)
+    {
+        float standardDeviation = 0;
+        int count = values.Count();
+        if (count > 1)
+        {
+            double avg = values.Average();
+            double sum = values.Sum(d => (d - avg) * (d - avg));
+            standardDeviation = (float)Math.Sqrt(sum / count);
+        }
+        return standardDeviation;
+    }
+
     // TODO Implement the standar scaler.
     public float[] Transform(float[] a_input)
     {
-        throw new NotImplementedException();
+        float mean = a_input.Average();
+        float std = GetStandardDeviation(a_input);
+        float[] result = new float[a_input.Length];
+        for (int i = 0; i < a_input.Length; ++i)
+        {
+            result[i] = (a_input[i] - mean) / std;
+        }
+        return result;
     }
 }
 public class MLPParameters
 {
-    List<float[,]> coeficients;
-    List<float[]> intercepts;
+    List<float[,]> coeficients; // matrices de pesos
+    List<float[]> intercepts;   // ai (tras ejecutar la funcion de activacion)
 
     public MLPParameters(int numLayers)
     {
@@ -93,12 +113,20 @@ public class MLPModel
         standarScaler = ss;
     }
 
-   
-    private float sigmoid(float z)
+    private float Sigmoid(float z)
     {
         return 1f / (1f + Mathf.Exp(-z));
     }
 
+    public float[] Sigmoid(float[] z)
+    {
+        float[] activated = new float[z.Length];
+        for (int i = 0; i < z.Length; i++)
+        {
+            activated[i] = 1f / (1f + Mathf.Exp(-z[i]));
+        }
+        return activated;
+    }
 
     public bool FeedForwardTest(string csv, float accuracy, float aceptThreshold, out float acc)
     {
@@ -135,10 +163,42 @@ public class MLPModel
         return a_input;
     }
 
+    public float[] HStack(float value, float[] v)
+    {
+        float[] result = new float[v.Length + 1];
+        result[0] = value;
+        for (int i = 0; i < v.Length; ++i)
+        {
+            result[i + 1] = v[i];
+        }
+        return result;
+    }
+
     // TODO Implement FeedForward
     public float[] FeedForward(float[] a_input)
     {
-        throw new NotImplementedException();
+        float[] result = new float[a_input.Length];
+        List<float[]> ai = new List<float[]>();
+        List<float[,]> zi = new List<float[,]>();
+        List<float[,]> thetas = mlpParameters.GetCoeff();
+
+        // Capa de entrada
+        float[] a1 = a_input;
+        ai.Add(a1);
+
+        // Capas ocultas
+        for (int i = 0; i < thetas.Count; ++i)
+        {
+            ai[i] = HStack(1, ai[i]);
+            zi.Add(ai[i] dot thetas[i]);
+            ai.Add(Sigmoid(zi[i]));
+        }
+
+        // Capa de salida
+        zi.Add(ai[thetas.Count - 1] dot thetas[thetas.Count - 1]);
+        ai.Add(Sigmoid(zi[zi.Count - 1]));
+
+        return result;
     }
 
     //TODO: implement the conversion from index to actions. You may need to implement several ways of
@@ -147,8 +207,7 @@ public class MLPModel
     //data.
     public Labels ConvertIndexToLabel(int index)
     {
-
-        throw new NotImplementedException();
+        return (Labels)index;
     }
     public Labels Predict(float[] output)
     {

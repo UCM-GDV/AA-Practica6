@@ -18571,7 +18571,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   text: {fileID: 4900000, guid: f6952ac73a22c7e4cb1715e4ec440d53, type: 3}
   model: 0
-  agentEnable: 0
+  agentEnable: 1
   indexToRemove: 08000000
   standarScaler: {fileID: 4900000, guid: 8c2199b07d842af47a17273860919bdb, type: 3}
   testFeedForward: 1
