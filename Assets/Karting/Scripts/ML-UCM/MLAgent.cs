@@ -177,9 +177,11 @@ public class MLPModel
     // TODO Implement FeedForward
     public float[] FeedForward(float[] a_input)
     {
+
+        //el input es un vector por que es una unica muestra de datos de este instante
         float[] result = new float[a_input.Length];
         List<float[]> ai = new List<float[]>();
-        List<float[,]> zi = new List<float[,]>();
+        List<float[]> zi = new List<float[]>();
         List<float[,]> thetas = mlpParameters.GetCoeff();
 
         // Capa de entrada
@@ -189,14 +191,15 @@ public class MLPModel
         // Capas ocultas
         for (int i = 0; i < thetas.Count; ++i)
         {
-            ai[i] = HStack(1, ai[i]);
-            zi.Add(DotProductVM( ai[i],thetas[i]));
-           // ai.Add(Sigmoid(zi[i]));
+           // ai[i] = HStack(1, ai[i]);
+            zi.Add(DotProductVM( ai[i],TransPose( thetas[i])));
+            ai.Add(Sigmoid(zi[i]));
         }
 
         // Capa de salida
-      //  zi.Add(ai[thetas.Count - 1] dot thetas[thetas.Count - 1]);
-        //ai.Add(Sigmoid(zi[zi.Count - 1]));
+         zi.Add(DotProductVM(ai[thetas.Count - 1], TransPose( thetas[thetas.Count - 1])));
+         ai.Add(Sigmoid(zi[zi.Count - 1]));
+        result = ai[ai.Count - 1];
 
         return result;
     }
@@ -210,16 +213,20 @@ public class MLPModel
         //comprobamos que la multiplicacoin se puede realizar 
         if (vect.Length != mat.GetLength(1))
         {
+            Debug.LogWarning("NO SE PUEDEN MULTIPLICAR DIMENSIONES NO COMPATIBLES");
             return null;
+            
         }
 
-        float[] product = new float[vect.Length] ;
+        float[] product = new float[mat.GetLength(0)] ;
         for (int i = 0; i < mat.GetLength(0); i++)
         {
             float r = 0;
             for (int j = 0; j < mat.GetLength(1); j++)
             {
-                r += mat[i, j] * vect[i];
+                float a = mat[i, j];
+                float b = vect[j];
+                r += a * b;
             }
             product[i] = r;
         }
@@ -267,7 +274,7 @@ public class MLPModel
         float[,] matT = new float [mat.GetLength(1),mat.GetLength(0)];
         for (int i = 0; i < mat.GetLength(0); i++)
         {
-            for (int j = 0; i < mat.GetLength(1); j++)
+            for (int j = 0; j < mat.GetLength(1); j++)
             {
                 matT[j, i] = mat[i, j];
             }
@@ -324,15 +331,17 @@ public class MLAgent : MonoBehaviour
 
     private MLPParameters mlpParameters;
     private MLPModel mlpModel;
+    [SerializeField]
     private Perception perception;
 
     // Start is called before the first frame update
     void Start()
     {
 
-        if (agentEnable)
+        if (true)
         {
             string file = text.text;
+           
             if (model == ModelType.MLP)
             {
                 mlpParameters = LoadParameters(file);
@@ -352,7 +361,8 @@ public class MLAgent : MonoBehaviour
                 }
             }
             Debug.Log("Parameters loaded " + mlpParameters);
-            perception = GetComponent<Perception>();
+           // perception =  gameObject.GetComponent<Perception>();
+           
         }
     }
 
