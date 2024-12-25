@@ -182,7 +182,12 @@ public class MLPModel
         float[] result = new float[a_input.Length];
         List<float[]> ai = new List<float[]>();
         List<float[]> zi = new List<float[]>();
+        //pesos
         List<float[,]> thetas = mlpParameters.GetCoeff();
+        //sesgos 
+        List<float[]> bias = mlpParameters.GetInter();
+
+        //si es h = v*w + b hay que sumar el vector de sesegos
 
         // Capa de entrada
         float[] a1 = a_input;
@@ -192,7 +197,10 @@ public class MLPModel
         for (int i = 0; i < thetas.Count; ++i)
         {
            // ai[i] = HStack(1, ai[i]);
+           //multiplicamos por los pesos
             zi.Add(DotProductVM( ai[i],TransPose( thetas[i])));
+            //agregamos los sesgos
+            zi[i] = VectorAdd(zi[i], bias[i]);
             ai.Add(Sigmoid(zi[i]));
         }
 
@@ -205,6 +213,17 @@ public class MLPModel
     }
 
 
+
+    float[] VectorAdd(float[] vect1, float[] vect2)
+    {
+        float[] r = new float[vect1.Length];
+        for (int i = 0; i < vect1.Length; i++)
+        {
+            r[i] = vect1[i]+vect2[i];
+        }
+        return r;
+    
+    }
 
     //If a is an N-D array and b is a 1-D array, it is a sum product over the last axis of a and b.
 
