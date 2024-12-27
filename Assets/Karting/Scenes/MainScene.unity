@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.17122526, g: 0.0695448, b: 0.15268382, a: 1}
+  m_IndirectSpecularColor: {r: 0.17121898, g: 0.0695472, b: 0.15266114, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -16189,7 +16189,7 @@ MonoBehaviour:
   - ray4
   - ray5
   snapshotTime: 0.1
-  csvOutput: ML/Kart_prueba.csv
+  csvOutput: ML/Kart_6.csv
   saveWhenFinish: 1
 --- !u!1001 &1687223860
 PrefabInstance:
@@ -18571,12 +18571,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   text: {fileID: 4900000, guid: f6952ac73a22c7e4cb1715e4ec440d53, type: 3}
   model: 0
-  agentEnable: 1
+  agentEnable: 0
   indexToRemove: 08000000
   standarScaler: {fileID: 4900000, guid: 8c2199b07d842af47a17273860919bdb, type: 3}
-  testFeedForward: 1
+  testFeedForward: 0
   accuracy: 0.8751472
   trainingCsv: {fileID: 4900000, guid: 269e2fdac96185940bbb94ca44c771c5, type: 3}
+  perception: {fileID: 1910917298}
 --- !u!114 &1928631401 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7428036255860265744, guid: fac1ae1239bfa534f9a6d838083b1cfd,

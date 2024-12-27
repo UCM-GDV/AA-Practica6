@@ -4,7 +4,7 @@ from skl2onnx import to_onnx
 from onnx2json import convert
 import pickle
 import json
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder , LabelEncoder
 from sklearn.metrics import accuracy_score
 
 def cleanData(data, x_columns, y_column):
@@ -24,10 +24,18 @@ def load_data_csv(path,x_columns,y_column):
     y = data[y_column]
     return data, X, y
 
-def one_hot_encoding(Y):
-    oneHotEncoder=OneHotEncoder()
+def one_hot_encoding(Y,cat='auto'):
+    oneHotEncoder=OneHotEncoder(categories=cat)
     YEnc=oneHotEncoder.fit_transform(Y.reshape(-1,1)).toarray()
     return YEnc
+
+def label_hot_encoding(Y, cat):
+    labelEncoder=LabelEncoder()
+    labelEncoder.fit(cat)
+    YEnc = labelEncoder.transform(Y)
+    return YEnc
+
+
 def accuracy(P,Y):
     return accuracy_score(P,Y)
 

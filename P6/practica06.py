@@ -5,7 +5,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
-from Utils import load_data_csv,one_hot_encoding,accuracy
+from Utils import load_data_csv,one_hot_encoding,accuracy,label_hot_encoding
 from MLP_Complete import MLP_Complete
 
 class Labels:
@@ -18,14 +18,16 @@ class Labels:
     RIGHT_BRAKE = 6
 
 label_mapping = {
-    0: "NONE",
+    0 : "NONE",
     1: "ACCELERATE",
     2: "BRAKE",
     3: "LEFT_ACCELERATE",
     4: "RIGHT_ACCELERATE",
     5: "LEFT_BRAKE",
-    6: "RIGHT_BRAKE"
+    6: "RIGHT_BRAKE",
+    
 }
+label_array = ["NONE","ACCELERATE","BRAKE","LEFT_ACCELERATE","RIGHT_ACCELERATE","LEFT_BRAKE","RIGHT_BRAKE"]
 
 # Ejercicio 2
 x_columns = ["ray1", "ray2", "ray3", "ray4", "ray5", "kartx", "karty", "kartz", "time"]
@@ -74,7 +76,7 @@ ax.set_ylabel(label2)
 ax.set_zlabel(label3)
 
 plt.savefig("ejercicio2.png")
-plt.show()
+#plt.show()
 
 # Ejercicio 4 
 x_columns = ["ray1", "ray2", "ray3", "ray4", "ray5", "kartx", "karty", "kartz", "time"]
@@ -85,21 +87,23 @@ scaler = StandardScaler()
 X = scaler.fit_transform(X).T
 
 # Split de los datos 
-X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0, test_size=0.33)
-yEnc = one_hot_encoding(np.array(y_train))
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0, test_size=0.3)
+yEnc = one_hot_encoding(np.array(y_train),[label_array])
 
-alpha_ = 1.0
-lambda_ = 0.0
+alpha_ = 0.665 #learning rate
+lambda_ = 0.056
+numiters_ = 2200
+hidden_layers_sizes = 7
 
 # Perceptron multicapa de implementacion propia 
-mlpc = MLP_Complete(X_train.shape[1],[9],yEnc.shape[1])
-Jhistory = mlpc.backpropagation(X_train,yEnc,alpha_,lambda_,2000)
+mlpc = MLP_Complete(X_train.shape[1],[hidden_layers_sizes],yEnc.shape[1])
+Jhistory = mlpc.backpropagation(X_train,yEnc,alpha_,lambda_,numiters_)
 a1,ai,zi = mlpc.feedforward(X_test)
 y_pred_mlp = mlpc.predict(ai[len(ai) - 1])
 y_pred_mlp_labels = [label_mapping[label] for label in y_pred_mlp]
 
 # Perceptron multicapa de SKlearn
-mlp = MLPClassifier(activation='logistic',alpha=lambda_,learning_rate='constant',learning_rate_init=alpha_,max_iter=2000,random_state=0,epsilon=0.12)
+mlp = MLPClassifier(hidden_layer_sizes=(hidden_layers_sizes,),activation='logistic',alpha=lambda_,learning_rate='constant',learning_rate_init=alpha_,max_iter=numiters_,random_state=0,epsilon=0.12)
 mlp.fit(X_train,y_train)
 y_pred_sklearn = mlp.predict(X_test)
 
