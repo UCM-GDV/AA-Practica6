@@ -4,6 +4,8 @@ from skl2onnx import to_onnx
 from onnx2json import convert
 import pickle
 import json
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import accuracy_score
 
 def cleanData(data, x_columns, y_column):
     for x_column in x_columns:
@@ -21,6 +23,13 @@ def load_data_csv(path,x_columns,y_column):
     X = np.array(xi)
     y = data[y_column]
     return data, X, y
+
+def one_hot_encoding(Y):
+    oneHotEncoder=OneHotEncoder()
+    YEnc=oneHotEncoder.fit_transform(Y.reshape(-1,1)).toarray()
+    return YEnc
+def accuracy(P,Y):
+    return accuracy_score(P,Y)
 
 def ExportONNX_JSON_TO_Custom(onnx_json,mlp):
     graphDic = onnx_json["graph"]
