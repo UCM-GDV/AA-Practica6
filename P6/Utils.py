@@ -4,9 +4,8 @@ from skl2onnx import to_onnx
 from onnx2json import convert
 import pickle
 import json
-from sklearn.preprocessing import OneHotEncoder , LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.metrics import accuracy_score
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 
@@ -27,33 +26,30 @@ def load_data_csv(path,x_columns,y_column):
     y = data[y_column]
     return data, X, y
 
-def one_hot_encoding(Y,cat='auto'):
-    oneHotEncoder=OneHotEncoder(categories=cat)
+def one_hot_encoding(Y,categories_='auto'):
+    oneHotEncoder=OneHotEncoder(categories=categories_)
     YEnc=oneHotEncoder.fit_transform(Y.reshape(-1,1)).toarray()
     return YEnc
-
-def label_hot_encoding(Y, cat):
-    labelEncoder=LabelEncoder()
-    labelEncoder.fit(cat)
-    YEnc = labelEncoder.transform(Y)
-    return YEnc
-
 
 def accuracy(P,Y):
     return accuracy_score(P,Y)
 
-def drawConfusionMatrix(matrix, classes, filename):
+def drawConfusionMatrix(matrix,xclasses,yclasses,filename,title="Confusion Matrix",xlabel="Predictions",ylabel="True label"):
     fig, ax = plt.subplots()
     im = ax.imshow(matrix)
-    plt.title("Confusion Matrix Test")
-    ax.set_xticks(classes)
-    ax.set_yticks(classes)
-    ax.set_xlabel("Predictions")
-    ax.set_ylabel("True label")
+    plt.title(title)
+    ax.set_xticks(np.arange(len(xclasses)))
+    ax.set_yticks(np.arange(len(yclasses)))
+    ax.set_xticklabels(xclasses,rotation=45,ha="right",rotation_mode="anchor")
+    ax.set_yticklabels(yclasses)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
     _annotate_heatmap(im, matrix)
     ax.figure.colorbar(im, ax=ax)
+    plt.tight_layout()
     plt.savefig(filename)
     plt.show()
+
 def _annotate_heatmap(im, data=None, valfmt="{x:.0f}", textcolors=("white", "black"), threshold=None, **textkw):
     if not isinstance(data, (list, np.ndarray)):
         data = im.get_array()
@@ -86,13 +82,14 @@ def _annotate_heatmap(im, data=None, valfmt="{x:.0f}", textcolors=("white", "bla
     return texts
 
 def calculateConfusionMatrix(classes, predictions, y_true, displayClass=0):
-    matrix = np.zeros((len(classes[0]), len(classes[0])))
+    num_classes = len(classes[0])
+    matrix = np.zeros((num_classes, num_classes))
     for i in range(len(predictions)):
         if (predictions[i] == y_true[i]):
             matrix[y_true[i]][y_true[i]] += 1
         else:
             matrix[y_true[i]][predictions[i]] += 1
-    return matrix.reshape((10,10))
+    return matrix.reshape((num_classes,num_classes))
 
 def ExportONNX_JSON_TO_Custom(onnx_json,mlp):
     graphDic = onnx_json["graph"]
