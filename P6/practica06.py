@@ -90,15 +90,15 @@ scaler = StandardScaler()
 X = scaler.fit_transform(X).T
 
 # Split de los datos 
-X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0, test_size=0.3)
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0, test_size=0.25)
 yEnc = one_hot_encoding(np.array(y_train),[label_array])
 y_numbers = [label_mapping_inverse[label] for label in np.array(y)]
 
 # Apartado 1
 # Hiperparámetros para 2 capas ocultas
-alpha_2 = 0.665 # learning rate
-lambda_2 = 0.056
-numiters_2 = 2200
+alpha_2 = 0.78 # learning rate
+lambda_2 = 0.0
+numiters_2 = 2000
 hidden_layers_sizes_2 = [9,7]
 
 # Perceptrón multicapa de implementación propia con más de 3 capas
@@ -114,9 +114,9 @@ print("MLP 2 hidden layers accuracy: " + str(accuracy_mlpc_2))
 
 # Apartado 2
 # Hiperparámetros para una única capa oculta
-alpha_ = 0.665 # learning rate
-lambda_ = 0.056
-numiters_ = 2200
+alpha_ = 0.72 # learning rate
+lambda_ = 0.0
+numiters_ = 1500
 hidden_layers_sizes_ = [7]
 
 # Perceptrón multicapa de implementación propia con una única capa
@@ -165,7 +165,7 @@ print("KNN accuracy: " + str(accuracy_knn))
 
 # Apartado 5
 # Modelo de árbol de decisión 
-decisiontree = DecisionTreeClassifier(criterion='gini',splitter='best',max_leaf_nodes=18,max_features=9)
+decisiontree = DecisionTreeClassifier(criterion='gini',splitter='best',max_leaf_nodes=14,max_features=7)
 decisiontree.fit(X_train,y_train)
 y_pred_tree = decisiontree.predict(X_test)
 y_pred_tree_numbers = [label_mapping_inverse[label] for label in y_pred_tree]
