@@ -6,6 +6,9 @@ import pickle
 import json
 from sklearn.preprocessing import OneHotEncoder , LabelEncoder
 from sklearn.metrics import accuracy_score
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.ticker as tck
 
 def cleanData(data, x_columns, y_column):
     for x_column in x_columns:
@@ -38,6 +41,58 @@ def label_hot_encoding(Y, cat):
 
 def accuracy(P,Y):
     return accuracy_score(P,Y)
+
+def drawConfusionMatrix(matrix, classes, filename):
+    fig, ax = plt.subplots()
+    im = ax.imshow(matrix)
+    plt.title("Confusion Matrix Test")
+    ax.set_xticks(classes)
+    ax.set_yticks(classes)
+    ax.set_xlabel("Predictions")
+    ax.set_ylabel("True label")
+    _annotate_heatmap(im, matrix)
+    ax.figure.colorbar(im, ax=ax)
+    plt.savefig(filename)
+    plt.show()
+def _annotate_heatmap(im, data=None, valfmt="{x:.0f}", textcolors=("white", "black"), threshold=None, **textkw):
+    if not isinstance(data, (list, np.ndarray)):
+        data = im.get_array()
+
+    # Normalize the threshold to the images color range.
+    if threshold is not None:
+        threshold = im.norm(threshold)
+    else:
+        threshold = im.norm(data.max())/2.
+
+    # Set default alignment to center, but allow it to be
+    # overwritten by textkw.
+    kw = dict(horizontalalignment="center",
+              verticalalignment="center")
+    kw.update(textkw)
+
+    # Get the formatter in case a string is supplied
+    if isinstance(valfmt, str):
+        valfmt = tck.StrMethodFormatter(valfmt)
+
+    # Loop over the data and create a `Text` for each "pixel".
+    # Change the text's color depending on the data.
+    texts = []
+    for i in range(data.shape[0]):
+        for j in range(data.shape[1]):
+            kw.update(color=textcolors[int(im.norm(data[i, j]) > threshold)])
+            text = im.axes.text(j, i, valfmt(data[i, j], None), **kw)
+            texts.append(text)
+
+    return texts
+
+def calculateConfusionMatrix(classes, predictions, y_true, displayClass=0):
+    matrix = np.zeros((len(classes[0]), len(classes[0])))
+    for i in range(len(predictions)):
+        if (predictions[i] == y_true[i]):
+            matrix[y_true[i]][y_true[i]] += 1
+        else:
+            matrix[y_true[i]][predictions[i]] += 1
+    return matrix.reshape((10,10))
 
 def ExportONNX_JSON_TO_Custom(onnx_json,mlp):
     graphDic = onnx_json["graph"]

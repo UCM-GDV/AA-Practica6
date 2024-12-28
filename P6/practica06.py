@@ -5,6 +5,9 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from Utils import load_data_csv,one_hot_encoding,accuracy,label_hot_encoding
 from MLP_Complete import MLP_Complete
 
@@ -90,6 +93,24 @@ X = scaler.fit_transform(X).T
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0, test_size=0.3)
 yEnc = one_hot_encoding(np.array(y_train),[label_array])
 
+
+# Hiperparametros para 2 capas ocultas
+alpha_2 = 0.665 #learning rate
+lambda_2 = 0.056
+numiters_2 = 2200
+hidden_layers_sizes_2 = [9,7]
+# Perceptron propio con mas de 3 capas
+mlpc_2 = MLP_Complete(X_train.shape[1],hidden_layers_sizes_2,yEnc.shape[1])
+Jhistory_2 = mlpc_2.backpropagation(X_train,yEnc,alpha_2,lambda_2,numiters_2)
+a1_2,ai_2,zi_2 = mlpc_2.feedforward(X_test)
+y_pred_mlp_2 = mlpc_2.predict(ai_2[len(ai_2) - 1])
+y_pred_mlp_labels_2 = [label_mapping[label] for label in y_pred_mlp_2]
+
+# Comprobacion de resultados
+accuracy_mlpc_2 = accuracy(y_test,y_pred_mlp_labels_2)
+print("MLP 2 hidden layers accuracy: " + str(accuracy_mlpc_2))
+
+
 alpha_ = 0.665 #learning rate
 lambda_ = 0.056
 numiters_ = 2200
@@ -107,8 +128,50 @@ mlp = MLPClassifier(hidden_layer_sizes=(hidden_layers_sizes,),activation='logist
 mlp.fit(X_train,y_train)
 y_pred_sklearn = mlp.predict(X_test)
 
-# Comprobacion de resultados
+# Comprobacion de resultados para una unica capa oculta 
 accuracy_mlpc = accuracy(y_test,y_pred_mlp_labels)
 print("MLP accuracy: " + str(accuracy_mlpc))
 accuracy_sklearn = accuracy(y_test,y_pred_sklearn)
 print("SKlearn accuracy: " + str(accuracy_sklearn))
+
+# SKLearn con distintos parametros
+skalpha = 1.0
+sklearningrate=0.25
+skiters = 1850
+mlp_2 = MLPClassifier(hidden_layer_sizes=tuple(hidden_layers_sizes_2),activation='relu',alpha=skalpha,learning_rate='adaptive',solver='sgd',learning_rate_init=sklearningrate,max_iter=skiters,random_state=0,epsilon=0.12)
+mlp_2.fit(X_train,y_train)
+y_pred_sklearn_2 = mlp_2.predict(X_test)
+
+# Comprobacion de resultados
+accuracy_sklearn_2 = accuracy(y_test,y_pred_sklearn_2)
+print("SKlearn modified accuracy: " + str(accuracy_sklearn_2))
+
+# Modelo KNN
+knn = KNeighborsClassifier(n_neighbors=7,leaf_size=9)
+knn.fit(X_train,y_train)
+y_pred_knn = knn.predict(X_test)
+
+# Comprobacion de resultados
+accuracy_knn = accuracy(y_test,y_pred_knn)
+print("KNN accuracy: " + str(accuracy_knn))
+
+# Modelo de arbol de decision 
+decisiontree = DecisionTreeClassifier(criterion='gini',splitter='best',max_leaf_nodes=18,max_features=9)
+decisiontree.fit(X_train,y_train)
+y_pred_tree= decisiontree.predict(X_test)
+
+# Comprobacion de resultados
+accuracy_decisontree = accuracy(y_test,y_pred_tree)
+print("Decision Tree accuracy: " + str(accuracy_decisontree))
+
+# Modelo Random Forest
+randomforest = RandomForestClassifier(n_estimators=80,max_depth=9,max_leaf_nodes=9)
+randomforest.fit(X_train,y_train)
+y_pred_forest = randomforest.predict(X_test)
+
+# Comprobacion de resultados
+accuracy_forest = accuracy(y_test,y_pred_forest)
+print("Random Forest  accuracy: " + str(accuracy_forest))
+
+
+# Matrices de Confusion
