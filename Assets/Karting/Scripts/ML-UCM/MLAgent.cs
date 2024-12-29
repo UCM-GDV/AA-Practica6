@@ -43,14 +43,16 @@ public class StandarScaler
     // TODO Implement the standar scaler.
     public float[] Transform(float[] a_input)
     {
-        float mean = a_input.Average();
-        float std = GetStandardDeviation(a_input);
+
         float[] result = new float[a_input.Length];
+
         for (int i = 0; i < a_input.Length; ++i)
         {
-            result[i] = (a_input[i] - mean) / std;
+            result[i] = (a_input[i] - mean[i]) / std[i];
         }
+
         return result;
+     
     }
 }
 public class MLPParameters
@@ -143,8 +145,11 @@ public class MLPModel
             if(i == 0)
                 Debug.Log(outputs[0] + ","+ outputs[1] + "," + outputs[2]);
             Labels label = Predict(outputs);
+
             if (label == labels[i])
                 goals++;
+          
+
         }
 
         acc = goals / ((float)parameters.Count);
@@ -179,7 +184,7 @@ public class MLPModel
     {
 
         //el input es un vector por que es una unica muestra de datos de este instante
-        float[] result = new float[a_input.Length];
+        
         List<float[]> ai = new List<float[]>();
         List<float[]> zi = new List<float[]>();
         //pesos
@@ -202,14 +207,13 @@ public class MLPModel
             //agregamos los sesgos
             zi[i] = VectorAdd(zi[i], bias[i]);
             ai.Add(Sigmoid(zi[i]));
+       
         }
 
-        // Capa de salida
-         zi.Add(DotProductVM(ai[thetas.Count - 1], TransPose( thetas[thetas.Count - 1])));
-         ai.Add(Sigmoid(zi[zi.Count - 1]));
-        result = ai[ai.Count - 1];
-
-        return result;
+        // Capa de salida es la ultima iteracion del bucle
+      
+       
+        return ai[ai.Count - 1]; 
     }
 
 
@@ -308,13 +312,34 @@ public class MLPModel
     //data.
     public Labels ConvertIndexToLabel(int index)
     {
-        return (Labels)index;
+        Labels label = Labels.NONE;
+
+        switch (index)
+        {
+            case 0:
+                label = Labels.ACCELERATE;
+                break;
+            case 1:
+                label = Labels.LEFT_ACCELERATE;
+                break;
+            case 2:
+                label = Labels.NONE;
+                break;
+            case 3:
+                label = Labels.RIGHT_ACCELERATE;
+                break;
+        }
+
+        return label;
     }
     public Labels Predict(float[] output)
     {
         float max;
         int index = GetIndexMaxValue(output, out max);
+      
         Labels label = ConvertIndexToLabel(index);
+    
+
         return label;
     }
 
@@ -357,7 +382,7 @@ public class MLAgent : MonoBehaviour
     void Start()
     {
 
-        if (true)
+        if (agentEnable)
         {
             string file = text.text;
            
@@ -375,7 +400,7 @@ public class MLAgent : MonoBehaviour
                     }
                     else
                     {
-                        Debug.LogError("Error: Accuracy is not the same. Accuracy in C# "+acc + " accuracy in sklearn "+ accuracy);
+                        Debug.Log("Error: Accuracy is not the same. Accuracy in C# "+acc + " accuracy in sklearn "+ accuracy);
                     }
                 }
             }
