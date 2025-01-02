@@ -8,12 +8,12 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
-from Utils import load_data_csv,one_hot_encoding,accuracy,calculateConfusionMatrix,drawConfusionMatrix,WriteStandardScaler,export_to_txt_custom
+from Utils_2 import load_data_csv,one_hot_encoding,accuracy,calculateConfusionMatrix,drawConfusionMatrix,WriteStandardScaler,export_to_txt_custom
 from MLP_Complete import MLP_Complete
 
 # Ejercicio 2
 x_columns = ["ray1", "ray2", "ray3", "ray4", "ray5", "kartx", "kartz"]
-gameData, X, y = load_data_csv("data/KartData.csv", x_columns, "action")
+gameData, X, y = load_data_csv("data/KartDataLimpio.csv", x_columns, "action")
 
 df1 = pd.DataFrame(gameData, columns=x_columns)
 
@@ -57,7 +57,7 @@ ax.set_ylabel(label2)
 ax.set_zlabel(label3)
 
 plt.tight_layout()
-plt.savefig("images/1/ejercicio2.png")
+plt.savefig("images/2/ejercicio2.png")
 plt.show()
 
 # Ejercicio 4
@@ -83,7 +83,7 @@ label_mapping_inverse = {
 label_array = ["NONE","ACCELERATE","BRAKE","LEFT_ACCELERATE","RIGHT_ACCELERATE","LEFT_BRAKE","RIGHT_BRAKE"]
 
 x_columns = ["ray1", "ray2", "ray3", "ray4", "ray5", "kartx", "kartz"]
-kartData, X, y = load_data_csv("data/KartData.csv", x_columns, "action")
+kartData, X, y = load_data_csv("data/KartDataLimpio.csv", x_columns, "action")
 
 # Normalizar los datos
 scaler = StandardScaler()
@@ -96,9 +96,9 @@ y_numbers = [label_mapping_inverse[label] for label in np.array(y)]
 
 # Apartado 1
 # Hiperparámetros para 2 capas ocultas
-alpha_2 = 0.6 # learning rate
+alpha_2 = 1.0 # learning rate
 lambda_2 = 0.0
-numiters_2 = 2200
+numiters_2 = 2000
 hidden_layers_sizes_2 = [9,7]
 
 # Perceptrón multicapa de implementación propia con más de 3 capas
@@ -114,9 +114,9 @@ print("MLP 2 hidden layers accuracy: " + str(accuracy_mlpc_2))
 
 # Apartado 2
 # Hiperparámetros para una única capa oculta
-alpha_ = 0.5 # learning rate
+alpha_ = 1.0 # learning rate
 lambda_ = 0.0
-numiters_ = 2200
+numiters_ = 2000
 hidden_layers_sizes_ = [7]
 
 # Perceptrón multicapa de implementación propia con una única capa
@@ -141,7 +141,7 @@ print("SKlearn accuracy: " + str(accuracy_sklearn))
 # Apartado 3
 # SKLearn con distintos parámetros
 skalpha = 1.0
-sklearningrate = 0.25
+sklearningrate = 1.0
 skiters = 1850
 mlp_2 = MLPClassifier(hidden_layer_sizes=tuple(hidden_layers_sizes_2),activation='relu',alpha=skalpha,learning_rate='adaptive',solver='sgd',learning_rate_init=sklearningrate,max_iter=skiters,random_state=0,epsilon=0.12)
 mlp_2.fit(X_train,y_train)
@@ -154,7 +154,7 @@ print("SKlearn modified accuracy: " + str(accuracy_sklearn_2))
 
 # Apartado 4
 # Modelo KNN
-knn = KNeighborsClassifier(n_neighbors=7,leaf_size=9)
+knn = KNeighborsClassifier()
 knn.fit(X_train,y_train)
 y_pred_knn = knn.predict(X_test)
 y_pred_knn_numbers = [label_mapping_inverse[label] for label in y_pred_knn]
@@ -165,7 +165,7 @@ print("KNN accuracy: " + str(accuracy_knn))
 
 # Apartado 5
 # Modelo de árbol de decisión 
-decisiontree = DecisionTreeClassifier(criterion='gini',splitter='best',max_leaf_nodes=20,max_features=7)
+decisiontree = DecisionTreeClassifier()
 decisiontree.fit(X_train,y_train)
 y_pred_tree = decisiontree.predict(X_test)
 y_pred_tree_numbers = [label_mapping_inverse[label] for label in y_pred_tree]
@@ -175,7 +175,7 @@ accuracy_decisontree = accuracy(y_test,y_pred_tree)
 print("Decision Tree accuracy: " + str(accuracy_decisontree))
 
 # Modelo Random Forest
-randomforest = RandomForestClassifier(n_estimators=80,max_depth=9,max_leaf_nodes=9)
+randomforest = RandomForestClassifier()
 randomforest.fit(X_train,y_train)
 y_pred_forest = randomforest.predict(X_test)
 y_pred_forest_numbers = [label_mapping_inverse[label] for label in y_pred_forest]
@@ -188,31 +188,31 @@ print("Random Forest accuracy: " + str(accuracy_forest))
 # Matrices de Confusión
 # Perceptrón multicapa de implementación propia con más de 3 capas
 matrix_mlpc_2 = calculateConfusionMatrix(yEnc,y_pred_mlpc_2,y_numbers)
-drawConfusionMatrix(matrix_mlpc_2,label_array,label_array,"images/1/ejercicio4_mlpc_2.png",title="Confusion Matrix (MLP 2 hidden layers)")
+drawConfusionMatrix(matrix_mlpc_2,label_array,label_array,"images/2/ejercicio4_mlpc_2.png",title="Confusion Matrix (MLP 2 hidden layers)")
 
 # Perceptrón multicapa de implementación propia con una única capa
 matrix_mlpc = calculateConfusionMatrix(yEnc,y_pred_mlpc,y_numbers)
-drawConfusionMatrix(matrix_mlpc,label_array,label_array,"images/1/ejercicio4_mlpc.png",title="Confusion Matrix (MLP)")
+drawConfusionMatrix(matrix_mlpc,label_array,label_array,"images/2/ejercicio4_mlpc.png",title="Confusion Matrix (MLP)")
 
 # Perceptrón multicapa de SKlearn
 matrix_sklearn = calculateConfusionMatrix(yEnc,y_pred_sklearn_numbers,y_numbers)
-drawConfusionMatrix(matrix_sklearn,label_array,label_array,"images/1/ejercicio4_sklearn.png",title="Confusion Matrix (SKLearn)")
+drawConfusionMatrix(matrix_sklearn,label_array,label_array,"images/2/ejercicio4_sklearn.png",title="Confusion Matrix (SKLearn)")
 
 # SKLearn con distintos parámetros
 matrix_sklearn_2 = calculateConfusionMatrix(yEnc,y_pred_sklearn_2_numbers,y_numbers)
-drawConfusionMatrix(matrix_sklearn_2,label_array,label_array,"images/1/ejercicio4_sklearn_2.png",title="Confusion Matrix (SKLearn with different parameters)")
+drawConfusionMatrix(matrix_sklearn_2,label_array,label_array,"images/2/ejercicio4_sklearn_2.png",title="Confusion Matrix (SKLearn with different parameters)")
 
 # Modelo KNN
 matrix_knn = calculateConfusionMatrix(yEnc,y_pred_knn_numbers,y_numbers)
-drawConfusionMatrix(matrix_knn,label_array,label_array,"images/1/ejercicio4_knn.png",title="Confusion Matrix (KNN)")
+drawConfusionMatrix(matrix_knn,label_array,label_array,"images/2/ejercicio4_knn.png",title="Confusion Matrix (KNN)")
 
 # Modelo de árbol de decisión
 matrix_decisiontree = calculateConfusionMatrix(yEnc,y_pred_tree_numbers,y_numbers)
-drawConfusionMatrix(matrix_decisiontree,label_array,label_array,"images/1/ejercicio4_tree.png",title="Confusion Matrix (Decision Tree)")
+drawConfusionMatrix(matrix_decisiontree,label_array,label_array,"images/2/ejercicio4_tree.png",title="Confusion Matrix (Decision Tree)")
 
 # Modelo Random Forest
 matrix_randomforest = calculateConfusionMatrix(yEnc,y_pred_forest_numbers,y_numbers)
-drawConfusionMatrix(matrix_randomforest,label_array,label_array,"images/1/ejercicio4_randomforest.png",title="Confusion Matrix (Random Forest)")
+drawConfusionMatrix(matrix_randomforest,label_array,label_array,"images/2/ejercicio4_randomforest.png",title="Confusion Matrix (Random Forest)")
 
 # Explica qué modelo crees que se adapta mejor al juego y cuál elegirías
 # (Explicación en el notebook)
@@ -226,11 +226,11 @@ drawConfusionMatrix(matrix_randomforest,label_array,label_array,"images/1/ejerci
 # Ejercicio 5
 # Exportar StandardScaler propio
 x_columns = ["ray1", "ray2", "ray3", "ray4", "ray5", "kartx", "kartz"]
-gameData, X, y = load_data_csv("data/KartData.csv", x_columns, "action")
+gameData, X, y = load_data_csv("data/KartDataLimpio.csv", x_columns, "action")
 df1 = pd.DataFrame(gameData, columns=x_columns)
 mean = np.array(df1.mean(axis=0))
 var = np.array(df1.var(axis=0))
-WriteStandardScaler("unityUtils/1/ScalerPropio.txt", mean, var)
+WriteStandardScaler("unityUtils/2/StandardScalerDataPropio.txt", mean, var)
 
 # Exportar modelo propio
 label_array = ["NONE","ACCELERATE","BRAKE","LEFT_ACCELERATE","RIGHT_ACCELERATE","LEFT_BRAKE","RIGHT_BRAKE"]
@@ -244,4 +244,4 @@ yEnc = one_hot_encoding(np.array(y_train),[label_array])
 hidden_layers_sizes_ = [7]
 
 model = MLP_Complete(X_train.shape[1],hidden_layers_sizes_,yEnc.shape[1])
-export_to_txt_custom(model,"unityUtils/1/modelPropio.txt")
+export_to_txt_custom(model,"unityUtils/2/model.custom.ml.propio.txt")

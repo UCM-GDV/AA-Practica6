@@ -255,7 +255,6 @@ public class Record : MonoBehaviour
         {
             Parameters p = parameters[i];
             csv += p.ToString();
-            csv += ",";
             csv += labels[i].ToString() + "\n";
         }
 

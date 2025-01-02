@@ -11,9 +11,7 @@ import matplotlib.ticker as tck
 
 def cleanData(data, x_columns, y_column):
     for x_column in x_columns:
-        data[x_column] = data[x_column].apply(lambda x: str(x).replace('.', '', x.count('.') - 1))
         data[x_column] = data[x_column].astype(np.float64)
-        data[x_column] = data[x_column].apply(lambda x: x*10 if len(str(x))==7 else x)
     data = data.drop(data[data[y_column] == "NONE"].index)
     return data
 
