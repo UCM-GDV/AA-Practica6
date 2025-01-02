@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class StandarScaler
+public class StandardScaler
 {
     private float[] mean;
     private float[] std;
-    public StandarScaler(string serieliced)
+    public StandardScaler(string serieliced)
     {
         string[] lines = serieliced.Split("\n");
         string[] meanStr = lines[0].Split(",");
@@ -52,7 +52,7 @@ public class StandarScaler
         }
 
         return result;
-     
+
     }
 }
 public class MLPParameters
@@ -107,17 +107,12 @@ public class MLPModel
 {
     MLPParameters mlpParameters;
     int[] indicesToRemove;
-    StandarScaler standarScaler;
-    public MLPModel(MLPParameters p, int[] itr, StandarScaler ss)
+    StandardScaler standardScaler;
+    public MLPModel(MLPParameters p, int[] itr, StandardScaler ss)
     {
         mlpParameters = p;
         indicesToRemove = itr;
-        standarScaler = ss;
-    }
-
-    private float Sigmoid(float z)
-    {
-        return 1f / (1f + Mathf.Exp(-z));
+        standardScaler = ss;
     }
 
     public float[] Sigmoid(float[] z)
@@ -136,26 +131,24 @@ public class MLPModel
         List<Parameters> parameters = tuple.Item1;
         List<Labels> labels = tuple.Item2;
         int goals = 0;
-        for(int i = 0; i < parameters.Count; i++)
+        for (int i = 0; i < parameters.Count; i++)
         {
             float[] input = parameters[i].ConvertToFloatArrat();
             float[] a_input = input.Where((value, index) => !indicesToRemove.Contains(index)).ToArray();
-            a_input = standarScaler.Transform(a_input);
+            a_input = standardScaler.Transform(a_input);
             float[] outputs = FeedForward(a_input);
-            if(i == 0)
-                Debug.Log(outputs[0] + ","+ outputs[1] + "," + outputs[2]);
+            if (i == 0)
+                Debug.Log(outputs[0] + "," + outputs[1] + "," + outputs[2]);
             Labels label = Predict(outputs);
 
             if (label == labels[i])
                 goals++;
-          
-
         }
 
         acc = goals / ((float)parameters.Count);
-        
+
         float diff = Mathf.Abs(acc - accuracy);
-        Debug.Log("Accuracy " + acc + " Accuracy espected " + accuracy + " goalds " + goals + " Examples " + parameters.Count + " Difference "+diff);
+        Debug.Log("Accuracy " + acc + " Accuracy espected " + accuracy + " goalds " + goals + " Examples " + parameters.Count + " Difference " + diff);
         return diff < aceptThreshold;
     }
 
@@ -164,7 +157,7 @@ public class MLPModel
         Parameters parameters = Record.ReadParameters(9, Time.timeSinceLevelLoad, p, transform);
         float[] input = parameters.ConvertToFloatArrat();
         float[] a_input = input.Where((value, index) => !indicesToRemove.Contains(index)).ToArray();
-        a_input = standarScaler.Transform(a_input);
+        a_input = standardScaler.Transform(a_input);
         return a_input;
     }
 
@@ -182,17 +175,14 @@ public class MLPModel
     // TODO Implement FeedForward
     public float[] FeedForward(float[] a_input)
     {
+        // El input es un vector por que es una unica muestra de datos de este instante
 
-        //el input es un vector por que es una unica muestra de datos de este instante
-        
         List<float[]> ai = new List<float[]>();
         List<float[]> zi = new List<float[]>();
-        //pesos
-        List<float[,]> thetas = mlpParameters.GetCoeff();
-        //sesgos 
-        List<float[]> bias = mlpParameters.GetInter();
+        List<float[,]> thetas = mlpParameters.GetCoeff();   // pesos
+        List<float[]> bias = mlpParameters.GetInter();      // sesgos
 
-        //si es h = v*w + b hay que sumar el vector de sesegos
+        // Si es h = v*w + b hay que sumar el vector de sesegos
 
         // Capa de entrada
         float[] a1 = a_input;
@@ -201,47 +191,42 @@ public class MLPModel
         // Capas ocultas
         for (int i = 0; i < thetas.Count; ++i)
         {
-           // ai[i] = HStack(1, ai[i]);
-           //multiplicamos por los pesos
-            zi.Add(DotProductVM( ai[i],TransPose( thetas[i])));
+            // ai[i] = HStack(1, ai[i]);
+            //multiplicamos por los pesos
+            zi.Add(DotProductVM(ai[i], TransPose(thetas[i])));
             //agregamos los sesgos
             zi[i] = VectorAdd(zi[i], bias[i]);
             ai.Add(Sigmoid(zi[i]));
-       
+
         }
 
         // Capa de salida es la ultima iteracion del bucle
-      
-       
-        return ai[ai.Count - 1]; 
+
+        return ai[ai.Count - 1];
     }
-
-
 
     float[] VectorAdd(float[] vect1, float[] vect2)
     {
         float[] r = new float[vect1.Length];
         for (int i = 0; i < vect1.Length; i++)
         {
-            r[i] = vect1[i]+vect2[i];
+            r[i] = vect1[i] + vect2[i];
         }
         return r;
-    
+
     }
 
-    //If a is an N-D array and b is a 1-D array, it is a sum product over the last axis of a and b.
-
+    // If a is an N-D array and b is a 1-D array, it is a sum product over the last axis of a and b.
     float[] DotProductVM(float[] vect, float[,] mat)
     {
-        //comprobamos que la multiplicacoin se puede realizar 
+        // Comprobamos que la multiplicacion se puede realizar 
         if (vect.Length != mat.GetLength(1))
         {
             Debug.LogWarning("NO SE PUEDEN MULTIPLICAR DIMENSIONES NO COMPATIBLES");
             return null;
-            
         }
 
-        float[] product = new float[mat.GetLength(0)] ;
+        float[] product = new float[mat.GetLength(0)];
         for (int i = 0; i < mat.GetLength(0); i++)
         {
             float r = 0;
@@ -256,45 +241,9 @@ public class MLPModel
         return product;
     }
 
-    float[,] DotProductMM(float[,] matA, float[,] matB)
-    {
-
-        int rA = matA.GetLength(0);
-        int cA = matA.GetLength(1);
-        int rB = matB.GetLength(0);
-        int cB = matB.GetLength(1);
-
-        if (cA != rB)
-        {
-            return null;
-
-        }
-        else
-        {
-            
-            float[,] result = new float[rA, cB];
-            float r = 0;
-            for (int i = 0; i < rA; i++)
-            {
-                for (int j = 0; j < cB; j++)
-                {
-                    r = 0;
-                    for (int k = 0; k < cA; k++)
-                    {
-                       r += matA[i, k] * matB[k, j];
-                    }
-                    result[i, j] = r;
-                }
-            }
-
-            return result;
-        }
-
-    }
-
     float[,] TransPose(float[,] mat)
     {
-        float[,] matT = new float [mat.GetLength(1),mat.GetLength(0)];
+        float[,] matT = new float[mat.GetLength(1), mat.GetLength(0)];
         for (int i = 0; i < mat.GetLength(0); i++)
         {
             for (int j = 0; j < mat.GetLength(1); j++)
@@ -303,7 +252,6 @@ public class MLPModel
             }
         }
         return matT;
-    
     }
 
     //TODO: implement the conversion from index to actions. You may need to implement several ways of
@@ -336,16 +284,255 @@ public class MLPModel
     {
         float max;
         int index = GetIndexMaxValue(output, out max);
-      
         Labels label = ConvertIndexToLabel(index);
-    
-
         return label;
     }
 
     public int GetIndexMaxValue(float[] output, out float max)
     {
         max = output[0];
+        int index = 0;
+        for (int i = 1; i < output.Length; i++)
+        {
+            if (output[i] > max)
+            {
+                max = output[i];
+                index = i;
+            }
+        }
+        return index;
+    }
+}
+
+public class MLPModelPropio
+{
+    MLPParameters mlpParameters;
+    int[] indicesToRemove;
+    StandardScaler standardScaler;
+    public MLPModelPropio(MLPParameters p, int[] itr, StandardScaler ss)
+    {
+        mlpParameters = p;
+        indicesToRemove = itr;
+        standardScaler = ss;
+    }
+
+    private float Sigmoid(float z)
+    {
+        return 1f / (1f + Mathf.Exp(-z));
+    }
+
+    public float[] Sigmoid(float[] z)
+    {
+        float[] activated = new float[z.Length];
+        for (int i = 0; i < z.Length; i++)
+        {
+            activated[i] = 1f / (1f + Mathf.Exp(-z[i]));
+        }
+        return activated;
+    }
+
+    public bool FeedForwardTest(string csv, float accuracy, float aceptThreshold, out float acc)
+    {
+        Tuple<List<Parameters>, List<Labels>> tuple = Record.ReadFromCsv(csv, true);
+        List<Parameters> parameters = tuple.Item1;
+        List<Labels> labels = tuple.Item2;
+        int goals = 0;
+        for (int i = 0; i < parameters.Count; i++)
+        {
+            float[] input = parameters[i].ConvertToFloatArrat();
+            float[] a_input = input.Where((value, index) => !indicesToRemove.Contains(index)).ToArray();
+            a_input = standardScaler.Transform(a_input);
+            float[] outputs = FeedForward(a_input);
+            if (i == 0)
+                Debug.Log(outputs[0] + "," + outputs[1] + "," + outputs[2]);
+            Labels label = Predict(outputs);
+
+            if (label == labels[i])
+                goals++;
+        }
+
+        acc = goals / ((float)parameters.Count);
+
+        float diff = Mathf.Abs(acc - accuracy);
+        Debug.Log("Accuracy " + acc + " Accuracy espected " + accuracy + " goalds " + goals + " Examples " + parameters.Count + " Difference " + diff);
+        return diff < aceptThreshold;
+    }
+
+    public float[] ConvertPerceptionToInput(Perception p, Transform transform)
+    {
+        Parameters parameters = Record.ReadParameters(9, Time.timeSinceLevelLoad, p, transform);
+        float[] input = parameters.ConvertToFloatArrat();
+        float[] a_input = input.Where((value, index) => !indicesToRemove.Contains(index)).ToArray();
+        a_input = standardScaler.Transform(a_input);
+        return a_input;
+    }
+
+    public float[] HStack(float value, float[] v)
+    {
+        float[] result = new float[v.Length + 1];
+        result[0] = value;
+        for (int i = 0; i < v.Length; ++i)
+        {
+            result[i + 1] = v[i];
+        }
+        return result;
+    }
+
+    //public float[,] HStack(float value, float[,] m)
+    //{
+    //    float[,] result = new float[m.Length + 1];
+    //    result[0] = value;
+    //    for (int i = 0; i < m.Length; ++i)
+    //    {
+    //        result[i + 1] = m[i];
+    //    }
+    //    return result;
+    //}
+
+    // TODO Implement FeedForward
+    public float[] FeedForward(float[] a_input)
+    {
+        List<float[,]> ai = new List<float[,]>();
+        List<float[,]> zi = new List<float[,]>();
+        List<float[,]> thetas = mlpParameters.GetCoeff();   // pesos
+
+        // Capa de entrada
+        float[,] a1 = new float[a_input.Length,1];
+        for (int i = 0; i < a_input.Length; ++i)
+            a1[i,1] = a_input[i];
+        ai.Add(a1);
+
+        // Capas ocultas
+        for (int i = 0; i < thetas.Count; ++i)
+        {
+            //ai[i] = HStack(1, ai[i]);
+            zi.Add(DotProductMM(ai[i], TransPose(thetas[i])));
+            //ai.Add(Sigmoid(zi[i]));
+        }
+
+        // Capa de salida
+
+        float[] result = new float[a_input.Length];
+        //return ai[ai.Count - 1];
+        return result;
+    }
+
+    float[] VectorAdd(float[] vect1, float[] vect2)
+    {
+        float[] r = new float[vect1.Length];
+        for (int i = 0; i < vect1.Length; i++)
+        {
+            r[i] = vect1[i] + vect2[i];
+        }
+        return r;
+    }
+
+    // If a is an N-D array and b is a 1-D array, it is a sum product over the last axis of a and b.
+    float[] DotProductVM(float[] vect, float[,] mat)
+    {
+        // Comprobamos que la multiplicacion se puede realizar 
+        if (vect.Length != mat.GetLength(1))
+        {
+            Debug.LogWarning("NO SE PUEDEN MULTIPLICAR DIMENSIONES NO COMPATIBLES");
+            return null;
+        }
+
+        float[] product = new float[mat.GetLength(0)];
+        for (int i = 0; i < mat.GetLength(0); i++)
+        {
+            float r = 0;
+            for (int j = 0; j < mat.GetLength(1); j++)
+            {
+                float a = mat[i, j];
+                float b = vect[j];
+                r += a * b;
+            }
+            product[i] = r;
+        }
+        return product;
+    }
+
+    float[,] DotProductMM(float[,] matA, float[,] matB)
+    {
+        int rA = matA.GetLength(0);
+        int cA = matA.GetLength(1);
+        int rB = matB.GetLength(0);
+        int cB = matB.GetLength(1);
+
+        if (cA != rB)
+        {
+            return null;
+        }
+        else
+        {
+            float[,] result = new float[rA, cB];
+            float r = 0;
+            for (int i = 0; i < rA; i++)
+            {
+                for (int j = 0; j < cB; j++)
+                {
+                    r = 0;
+                    for (int k = 0; k < cA; k++)
+                    {
+                        r += matA[i, k] * matB[k, j];
+                    }
+                    result[i, j] = r;
+                }
+            }
+
+            return result;
+        }
+    }
+
+    float[,] TransPose(float[,] mat)
+    {
+        float[,] matT = new float[mat.GetLength(1), mat.GetLength(0)];
+        for (int i = 0; i < mat.GetLength(0); i++)
+        {
+            for (int j = 0; j < mat.GetLength(1); j++)
+            {
+                matT[j, i] = mat[i, j];
+            }
+        }
+        return matT;
+    }
+
+    //TODO: implement the conversion from index to actions. You may need to implement several ways of
+    //transforming the data if you play in different ways. You must take into account how many classes
+    //you have used, and how One Hot Encoder has encoded them and this may vary if you change the training
+    //data.
+    public Labels ConvertIndexToLabel(int index)
+    {
+        Labels label = Labels.NONE;
+
+        switch (index)
+        {
+            case 0:
+                label = Labels.ACCELERATE;
+                break;
+            case 1:
+                label = Labels.LEFT_ACCELERATE;
+                break;
+            case 2:
+                label = Labels.NONE;
+                break;
+            case 3:
+                label = Labels.RIGHT_ACCELERATE;
+                break;
+        }
+
+        return label;
+    }
+    public Labels Predict(float[] output)
+    {
+        float max;
+        int index = GetIndexMaxValue(output, out max);
+        Labels label = ConvertIndexToLabel(index);
+        return label;
+    }
+
+    public int GetIndexMaxValue(float[] output, out float max)
+    {
         max = output[0];
         int index = 0;
         for (int i = 1; i < output.Length; i++)
@@ -362,55 +549,57 @@ public class MLPModel
 
 public class MLAgent : MonoBehaviour
 {
-    public enum ModelType { MLP = 0 }
+    public enum ModelType { MLP = 0, MLPPropio = 1, KNN = 2 }
     public TextAsset text;
+    public TextAsset textPropio;
     public ModelType model;
     public bool agentEnable;
     public int[] indexToRemove;
-    public TextAsset standarScaler;
+    public TextAsset standardScaler;
+    public TextAsset standardScalerPropio;
     public bool testFeedForward;
     public float accuracy;
     public TextAsset trainingCsv;
 
-
     private MLPParameters mlpParameters;
     private MLPModel mlpModel;
+    private MLPModelPropio mlpModelPropio;
     [SerializeField]
     private Perception perception;
 
-    // Start is called before the first frame update
     void Start()
     {
-
         if (agentEnable)
         {
-            string file = text.text;
-           
             if (model == ModelType.MLP)
             {
-                mlpParameters = LoadParameters(file);
-                StandarScaler ss = new StandarScaler(standarScaler.text);
+                mlpParameters = LoadParameters(text.text);
+                StandardScaler ss = new StandardScaler(standardScaler.text);
                 mlpModel = new MLPModel(mlpParameters, indexToRemove, ss);
                 if (testFeedForward)
                 {
                     float acc;
-                    if(mlpModel.FeedForwardTest(trainingCsv.text, accuracy, 0.025f, out acc))
+                    if (mlpModel.FeedForwardTest(trainingCsv.text, accuracy, 0.025f, out acc))
                     {
                         Debug.Log("Test Complete!");
                     }
                     else
                     {
-                        Debug.Log("Error: Accuracy is not the same. Accuracy in C# "+acc + " accuracy in sklearn "+ accuracy);
+                        Debug.Log("Error: Accuracy is not the same. Accuracy in C# " + acc + " accuracy in sklearn " + accuracy);
                     }
                 }
             }
+            else if (model == ModelType.MLPPropio)
+            {
+                mlpParameters = LoadParameters(textPropio.text);
+                StandardScaler ss = new StandardScaler(standardScalerPropio.text);
+                mlpModelPropio = new MLPModelPropio(mlpParameters, indexToRemove, ss);
+            }
+
             Debug.Log("Parameters loaded " + mlpParameters);
-           // perception =  gameObject.GetComponent<Perception>();
-           
+            // perception =  gameObject.GetComponent<Perception>();
         }
     }
-
-
 
     public KartGame.KartSystems.InputData AgentInput()
     {

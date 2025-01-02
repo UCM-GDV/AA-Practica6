@@ -9,7 +9,7 @@ using UnityEngine;
 public class Parameters
 {
     public float[] parametersValue;
- 
+
     public Parameters(int numParameters)
     {
         parametersValue = new float[numParameters];
@@ -27,7 +27,7 @@ public class Parameters
             parametersValue[index] = value;
         }
         // get and set accessors
-        
+
     }
 
     public int Size
@@ -49,7 +49,7 @@ public class Parameters
     public float[] ConvertToFloatArrat()
     {
         float[] ret = new float[parametersValue.Length];
-        for(int i = 0; i < parametersValue.Length; i++)
+        for (int i = 0; i < parametersValue.Length; i++)
         {
             ret[i] = parametersValue[i];
         }
@@ -69,7 +69,7 @@ public class Parameters
     }
 }
 
-public enum Labels { NONE=0, ACCELERATE=1, BRAKE=2, LEFT_ACCELERATE=3, RIGHT_ACCELERATE=4, LEFT_BRAKE=5, RIGHT_BRAKE=6 }
+public enum Labels { NONE = 0, ACCELERATE = 1, BRAKE = 2, LEFT_ACCELERATE = 3, RIGHT_ACCELERATE = 4, LEFT_BRAKE = 5, RIGHT_BRAKE = 6 }
 public class Record : MonoBehaviour
 {
     public bool recordMode;
@@ -116,7 +116,7 @@ public class Record : MonoBehaviour
         if (recordMode)
         {
             time += Time.deltaTime;
-            if(time > snapshotTime)
+            if (time > snapshotTime)
             {
                 time = time - snapshotTime;
                 RecordSnapshot(totalTime);
@@ -126,7 +126,7 @@ public class Record : MonoBehaviour
 
     public void RecordSnapshot(float t)
     {
-        Parameters p = ReadParameters(parametersName.Length+1, t,perception, kart);
+        Parameters p = ReadParameters(parametersName.Length + 1, t, perception, kart);
         parameters.Add(p);
         InputData input = keyboardInput.GenerateInput();
         labels.Add(ConvertToLabel(input));
@@ -202,15 +202,15 @@ public class Record : MonoBehaviour
 
     private void OnDestroy()
     {
-        if(saveWhenFinish && recordMode)
+        if (saveWhenFinish && recordMode)
         {
             string csvFormat = ConvertToCSV(parametersName, parameters, labels);
             File.WriteAllText(csvOutput, csvFormat);
-            Debug.Log("File "+ csvOutput + " save");
+            Debug.Log("File " + csvOutput + " save");
         }
     }
 
-    public static Tuple<List<Parameters>,List<Labels>> ReadFromCsv(string csv, bool ignoreFirstLine)
+    public static Tuple<List<Parameters>, List<Labels>> ReadFromCsv(string csv, bool ignoreFirstLine)
     {
         Tuple<List<Parameters>, List<Labels>> output;
         List<Parameters> paremters = new List<Parameters>();
@@ -218,19 +218,19 @@ public class Record : MonoBehaviour
         string[] lines = csv.Split("\n");
         for (int i = ignoreFirstLine ? 1 : 0; i < lines.Length; i++)
         {
-            if(lines[i].Trim() != "")
+            if (lines[i].Trim() != "")
             {
                 string line = lines[i];
                 string[] fields = line.Split(",");
                 Parameters parameter = new Parameters(fields.Length - 1);
-                for (int j = 0; j < fields.Length-1; j++)
+                for (int j = 0; j < fields.Length - 1; j++)
                 {
                     float value = float.Parse(fields[j], System.Globalization.CultureInfo.InvariantCulture);
                     parameter[j] = value;
                 }
                 paremters.Add(parameter);
                 Labels label;
-                if(!Enum.TryParse<Labels>(fields[fields.Length-1].Trim(),out label))
+                if (!Enum.TryParse<Labels>(fields[fields.Length - 1].Trim(), out label))
                 {
                     Debug.LogError("La etiqueta " + fields[fields.Length].Trim() + " no es correcta");
                 }
@@ -241,10 +241,10 @@ public class Record : MonoBehaviour
         return output;
     }
 
-    public static string ConvertToCSV(string[] parametersName,List<Parameters> parameters,List<Labels> labels)
+    public static string ConvertToCSV(string[] parametersName, List<Parameters> parameters, List<Labels> labels)
     {
         string csv = "";
-        for(int i = 0; i < parametersName.Length; i++)
+        for (int i = 0; i < parametersName.Length; i++)
         {
             csv += parametersName[i] + ",";
         }
@@ -283,5 +283,4 @@ public class Record : MonoBehaviour
         p[perceptionInfo.Length + 3] = t;
         return p;
     }
-
 }

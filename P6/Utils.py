@@ -11,8 +11,9 @@ import matplotlib.ticker as tck
 
 def cleanData(data, x_columns, y_column):
     for x_column in x_columns:
-        data[x_column] = data[x_column].apply(lambda x:  str(x).replace('.', '', x.count('.') - 1))
+        data[x_column] = data[x_column].apply(lambda x: str(x).replace('.', '', x.count('.') - 1))
         data[x_column] = data[x_column].astype(np.float64)
+        data[x_column] = data[x_column].apply(lambda x: x*10 if len(str(x))==7 else x) 
     data = data.drop(data[data[y_column] == "NONE"].index)
     return data
 
@@ -146,6 +147,21 @@ def export_to_json(model, filename):
     with open(filename, 'w') as f:
         json.dump(model_dict, f)
 
+def export_to_txt_custom(model, filename):
+    with open(filename, 'w') as f:
+        num_layers = len(model.thetas) + 1
+        f.write(f"num_layers:{num_layers}\n")
+
+        parameter_num = 0
+        for _, (coefs) in enumerate(zip(model.thetas)):
+            for param_type, param_values in [('coefficient', coefs)]:
+                dims = list(map(str, reversed(param_values[0].shape)))
+                f.write(f"parameter:{parameter_num}\n")
+                f.write(f"dims:{dims}\n")
+                f.write(f"name:{param_type}\n")
+                f.write(f"values:{param_values[0].flatten().tolist()}\n")
+            parameter_num += 1
+
 def export_to_txt(model, filename):
     with open(filename, 'w') as f:
         num_layers = len(model.coefs_) + 1
@@ -161,3 +177,15 @@ def export_to_txt(model, filename):
                 f.write(f"name:{param_type}\n")
                 f.write(f"values:{param_values.flatten().tolist()}\n")
             parameter_num += 1
+
+def WriteStandardScaler(file,mean,var):
+    line = ""
+    for i in range(0,len(mean)-1):
+        line = line + str(mean[i]) + ","
+    line = line + str(mean[len(mean)-1])+ "\n"
+    for i in range(0,len(var)-1):
+        line = line + str(var[i]) + ","
+    line = line + str(var[len(var)-1])+ "\n"
+    with open(file, 'w') as f:
+        f.write(line)
+        f.close()
