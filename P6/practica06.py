@@ -261,7 +261,7 @@ accuracy_knn = accuracy(y_test,y_pred_knn)
 print("KNN highest accuracy: " + str(accuracy_knn))
 
 # Modelo de árbol de decisión 
-decisiontree = DecisionTreeClassifier(max_leaf_nodes=10)
+decisiontree = DecisionTreeClassifier(criterion='gini',splitter='best',max_leaf_nodes=9 ,max_features=7)
 decisiontree.fit(X_train,y_train)
 y_pred_tree = decisiontree.predict(X_test)
 y_pred_tree_numbers = [label_mapping_inverse[label] for label in y_pred_tree]
