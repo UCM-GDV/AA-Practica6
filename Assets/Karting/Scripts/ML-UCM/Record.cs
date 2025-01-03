@@ -69,7 +69,7 @@ public class Parameters
     }
 }
 
-public enum Labels { NONE = 0, ACCELERATE = 1, BRAKE = 2, LEFT_ACCELERATE = 3, RIGHT_ACCELERATE = 4, LEFT_BRAKE = 5, RIGHT_BRAKE = 6 }
+public enum Labels { NONE = 0, ACCELERATE = 1, BRAKE = 2, LEFT_ACCELERATE = 3, RIGHT_ACCELERATE = 4, LEFT_BRAKE = 5, RIGHT_BRAKE = 6, LENGTH = 7 }
 public class Record : MonoBehaviour
 {
     public bool recordMode;

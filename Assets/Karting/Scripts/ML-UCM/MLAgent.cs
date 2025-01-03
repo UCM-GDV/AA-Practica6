@@ -325,7 +325,7 @@ public class MLPModelPropio
             float[] input = parameters[i].ConvertToFloatArrat();
             float[] a_input = input.Where((value, index) => !indicesToRemove.Contains(index)).ToArray();
             a_input = standardScaler.Transform(a_input);
-            float[] outputs = FeedForward(a_input);
+            float[,] outputs = FeedForward(a_input);
             Labels label = Predict(outputs);
             if (label == labels[i])
                 goals++;
@@ -366,7 +366,7 @@ public class MLPModelPropio
     }
 
     // TODO Implement FeedForward
-    public float[] FeedForward(float[] a_input)
+    public float[,] FeedForward(float[] a_input)
     {
         List<float[,]> ai = new List<float[,]>();
         List<float[,]> zi = new List<float[,]>();
@@ -392,13 +392,7 @@ public class MLPModelPropio
         zi.Add(DotProductMM(ai[thetas.Count - 1], Transpose(thetas[thetas.Count - 1])));
         ai.Add(Sigmoid(zi[zi.Count - 1]));
 
-        float[,] finalActivation = ai[ai.Count - 1];
-        float[] result = new float[finalActivation.GetLength(0)];
-        for (int i = 0; i < finalActivation.GetLength(0); ++i)
-        {
-            result[i] = finalActivation[i, 0];
-        }
-        return result;
+        return ai[ai.Count - 1];
     }
 
     float[,] DotProductMM(float[,] matA, float[,] matB)
@@ -454,24 +448,21 @@ public class MLPModelPropio
 
         switch (index)
         {
-            case 0:
+            case 1:
                 label = Labels.ACCELERATE;
                 break;
-            case 1:
-                label = Labels.LEFT_ACCELERATE;
-                break;
             case 2:
-                label = Labels.NONE;
-                break;
-            case 3:
                 label = Labels.RIGHT_ACCELERATE;
                 break;
-        }
+            case 3:
+                label = Labels.LEFT_ACCELERATE;
+                break;
 
+        }
         return label;
     }
 
-    public Labels Predict(float[] output)
+    public Labels Predict(float[,] output)
     {
         float max;
         int index = GetIndexMaxValue(output, out max);
@@ -479,16 +470,19 @@ public class MLPModelPropio
         return label;
     }
 
-    public int GetIndexMaxValue(float[] output, out float max)
+    public int GetIndexMaxValue(float[,] output, out float max)
     {
-        max = output[0];
+        max = output[0,0];
         int index = 0;
-        for (int i = 1; i < output.Length; i++)
+        for (int i = 0; i < output.GetLength(0); i++)
         {
-            if (output[i] > max)
+            for (int j = 0; j < output.GetLength(1); ++j)
             {
-                max = output[i];
-                index = i;
+                if (output[i,j] > max)
+                {
+                    max = output[i,j];
+                    index = j;
+                }
             }
         }
         return index;
@@ -514,8 +508,16 @@ public class MLAgent : MonoBehaviour
     private MLPParameters mlpParameters;
     private MLPModel mlpModel;
     private MLPModelPropio mlpModelPropio;
-    [SerializeField]
     private Perception perception;
+
+    private void Awake()
+    {
+        perception = GetComponent<Perception>();
+        if (perception == null)
+        {
+            Debug.LogError("Perception component not assigned");
+        }
+    }
 
     void Start()
     {
@@ -559,26 +561,26 @@ public class MLAgent : MonoBehaviour
             }
 
             Debug.Log("Parameters loaded " + mlpParameters);
-            // perception =  gameObject.GetComponent<Perception>();
         }
     }
 
     public KartGame.KartSystems.InputData AgentInput()
     {
-        float[] X, outputs;
+        float[] X, outputsMLP;
+        float[,] outputsMLPPropio;
         Labels label = Labels.NONE;
 
         switch (model)
         {
             case ModelType.MLP:
                 X = this.mlpModel.ConvertPerceptionToInput(perception, this.transform);
-                outputs = this.mlpModel.FeedForward(X);
-                label = this.mlpModel.Predict(outputs);
+                outputsMLP = this.mlpModel.FeedForward(X);
+                label = this.mlpModel.Predict(outputsMLP);
                 break;
             case ModelType.MLPPropio:
                 X = this.mlpModelPropio.ConvertPerceptionToInput(perception, this.transform);
-                outputs = this.mlpModelPropio.FeedForward(X);
-                label = this.mlpModelPropio.Predict(outputs);
+                outputsMLPPropio = this.mlpModelPropio.FeedForward(X);
+                label = this.mlpModelPropio.Predict(outputsMLPPropio);
                 break;
         }
         KartGame.KartSystems.InputData input = Record.ConvertLabelToInput(label);

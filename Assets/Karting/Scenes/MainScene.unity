@@ -18579,10 +18579,9 @@ MonoBehaviour:
     type: 3}
   testFeedForward: 1
   accuracy: 0.8751472
-  accuracyPropio: 0.7649063
+  accuracyPropio: 0.6745341
   trainingCsv: {fileID: 4900000, guid: 269e2fdac96185940bbb94ca44c771c5, type: 3}
   trainingCsvPropio: {fileID: 4900000, guid: 93cc2bbcd32f2b34882c594d7e960ac9, type: 3}
-  perception: {fileID: 1910917298}
 --- !u!114 &1928631401 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7428036255860265744, guid: fac1ae1239bfa534f9a6d838083b1cfd,

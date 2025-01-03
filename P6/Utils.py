@@ -11,9 +11,7 @@ import matplotlib.ticker as tck
 
 def cleanData(data, x_columns, y_column):
     for x_column in x_columns:
-        data[x_column] = data[x_column].apply(lambda x: str(x).replace('.', '', x.count('.') - 1))
         data[x_column] = data[x_column].astype(np.float64)
-        data[x_column] = data[x_column].apply(lambda x: x*10 if len(str(x))==7 else x)
     data = data.drop(data[data[y_column] == "NONE"].index)
     return data
 
@@ -147,6 +145,21 @@ def export_to_json(model, filename):
     with open(filename, 'w') as f:
         json.dump(model_dict, f)
 
+def export_to_txt(model, filename):
+    with open(filename, 'w') as f:
+        num_layers = len(model.coefs_) + 1
+        f.write(f"num_layers:{num_layers}\n")
+
+        parameter_num = 0
+        for _, (coefs, intercepts) in enumerate(zip(model.coefs_, model.intercepts_)):
+            for param_type, param_values in [('coefficient', coefs), ('intercepts', intercepts)]:
+                dims = list(map(str, reversed(param_values.shape)))
+                f.write(f"parameter:{parameter_num}\n")
+                f.write(f"dims:{dims}\n")
+                f.write(f"name:{param_type}\n")
+                f.write(f"values:{param_values.flatten().tolist()}\n")
+            parameter_num += 1
+
 def export_to_txt_custom(model, filename):
     with open(filename, 'w') as f:
         num_layers = len(model.thetas) + 1
@@ -160,22 +173,6 @@ def export_to_txt_custom(model, filename):
                 f.write(f"dims:{dims}\n")
                 f.write(f"name:{param_type}\n")
                 f.write(f"values:{param_values[0].flatten().tolist()}\n")
-            parameter_num += 1
-
-def export_to_txt(model, filename):
-    with open(filename, 'w') as f:
-        num_layers = len(model.coefs_) + 1
-        f.write(f"num_layers:{num_layers}\n")
-
-        parameter_num = 0
-        for _, (coefs, intercepts) in enumerate(zip(model.coefs_, model.intercepts_)):
-
-            for param_type, param_values in [('coefficient', coefs), ('intercepts', intercepts)]:
-                dims = list(map(str, reversed(param_values.shape)))
-                f.write(f"parameter:{parameter_num}\n")
-                f.write(f"dims:{dims}\n")
-                f.write(f"name:{param_type}\n")
-                f.write(f"values:{param_values.flatten().tolist()}\n")
             parameter_num += 1
 
 def WriteStandardScaler(file,mean,var):
