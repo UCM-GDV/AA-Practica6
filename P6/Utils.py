@@ -175,6 +175,12 @@ def export_to_txt_custom(model, filename):
                 f.write(f"values:{param_values[0].flatten().tolist()}\n")
             parameter_num += 1
 
+def export_knn_to_txt(model, filename):
+    with open(filename, 'w') as f:
+        params = model.get_params()
+        f.write(f"n_neighbors:{params['n_neighbors']}\n")
+        f.write(f"p:{params['p']}\n")
+
 def WriteStandardScaler(file,mean,var):
     line = ""
     for i in range(0,len(mean)-1):
@@ -185,4 +191,3 @@ def WriteStandardScaler(file,mean,var):
     line = line + str(var[len(var)-1])+ "\n"
     with open(file, 'w') as f:
         f.write(line)
-        f.close()

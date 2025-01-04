@@ -8,7 +8,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
-from Utils import load_data_csv,one_hot_encoding,accuracy,calculateConfusionMatrix,drawConfusionMatrix,WriteStandardScaler,export_to_txt_custom
+from Utils import load_data_csv,one_hot_encoding,accuracy,calculateConfusionMatrix,drawConfusionMatrix,WriteStandardScaler,export_to_txt_custom,export_knn_to_txt
 from MLP_Complete import MLP_Complete
 
 # Ejercicio 2 y 3
@@ -316,3 +316,21 @@ hidden_layers_sizes_ = [7]
 model = MLP_Complete(X_train.shape[1],hidden_layers_sizes_,yEnc.shape[1])
 Jhistory_2 = model.backpropagation(X_train,yEnc,alpha_,lambda_,numiters_)
 export_to_txt_custom(model,"unityUtils/model.custom.ml.propio.txt")
+
+# Ejercicio 6 (opcional)
+# Modelo KNN
+x_columns = ["ray1", "ray2", "ray3", "ray4", "ray5", "kartx", "kartz"]
+gameData, X, y = load_data_csv("data/KartData.csv", x_columns, "action")
+
+scaler = StandardScaler()
+X = scaler.fit_transform(X).T
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0, test_size=0.33)
+
+# Exportar los parametros usados del modelo
+knn = KNeighborsClassifier(p=3) # p > 2 -> minkowski_distance
+knn.fit(X_train,y_train)
+export_knn_to_txt(knn,"unityUtils/model.knn.txt")
+
+# Explica si ha funcionado mejor el modelo elegido en la práctica que el modelo de MLP
+# (Explicación en el notebook)

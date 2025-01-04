@@ -1,11 +1,9 @@
 using KartGame.KartSystems;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using System.Linq;
-
 
 public class Parameters
 {
