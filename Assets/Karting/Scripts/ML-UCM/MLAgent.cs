@@ -488,215 +488,455 @@ public class MLPModelPropio
         return index;
     }
 }
-
-public class MLAgent : MonoBehaviour
+public class KNNParameters
 {
-    public enum ModelType { MLP = 0, MLPPropio = 1, KNN = 2 }
-    public TextAsset text;
-    public TextAsset textPropio;
-    public ModelType model;
-    public bool agentEnable;
-    public int[] indexToRemove;
-    public TextAsset standardScaler;
-    public TextAsset standardScalerPropio;
-    public bool testFeedForward;
-    public float accuracy;
-    public float accuracyPropio;
-    public TextAsset trainingCsv;
-    public TextAsset trainingCsvPropio;
-
-    private MLPParameters mlpParameters;
-    private MLPModel mlpModel;
-    private MLPModelPropio mlpModelPropio;
-    private Perception perception;
-
-    private void Awake()
+  
+   public  float  power;
+   public int nNeighbours;
+ 
+    public KNNParameters( int nn , int p)
     {
-        perception = GetComponent<Perception>();
-        if (perception == null)
+        power = p;
+        nNeighbours = nn;
+    
+    }
+  
+
+}
+
+
+public class KNNModelPropio
+{
+    KNNParameters knnParameters;
+    int[] indicesToRemove;
+    StandardScaler standardScaler;
+    public List<Tuple<float[], string>> trainingData;
+    public KNNModelPropio(KNNParameters p, int[] itr, StandardScaler ss, string data, int[] removeparam)
+    {
+        knnParameters = p;
+        indicesToRemove = itr;
+        standardScaler = ss;
+        LoadData(data, removeparam);
+    }
+    public void LoadData(string dataFile, int[] removeParams)
+    {
+
+        Tuple<List<Parameters>, List<Labels>> rawData = Record.ReadFromCsv(dataFile, true, removeParams);
+
+        trainingData = new List<Tuple<float[], string>>();
+        for (int i = 0; i < rawData.Item1.Count; i++)
         {
-            Debug.LogError("Perception component not assigned");
+            trainingData.Add(new Tuple<float[], string>(rawData.Item1[i].parametersValue, rawData.Item2[i].ToString()));
         }
+
+
+
     }
 
-    void Start()
-    {
-        if (agentEnable)
-        {
-            if (model == ModelType.MLP)
-            {
-                mlpParameters = LoadParameters(text.text);
-                StandardScaler ss = new StandardScaler(standardScaler.text);
-                mlpModel = new MLPModel(mlpParameters, indexToRemove, ss);
-                if (testFeedForward)
-                {
-                    float acc;
-                    if (mlpModel.FeedForwardTest(trainingCsv.text, accuracy, 0.025f, out acc))
-                    {
-                        Debug.Log("Test Complete!");
-                    }
-                    else
-                    {
-                        Debug.Log("Error: Accuracy is not the same. Accuracy in C# " + acc + " accuracy in sklearn " + accuracy);
-                    }
-                }
-            }
-            else if (model == ModelType.MLPPropio)
-            {
-                mlpParameters = LoadParameters(textPropio.text);
-                StandardScaler ss = new StandardScaler(standardScalerPropio.text);
-                mlpModelPropio = new MLPModelPropio(mlpParameters, indexToRemove, ss);
-                if (testFeedForward)
-                {
-                    float acc;
-                    if (mlpModelPropio.FeedForwardTest(trainingCsvPropio.text, accuracyPropio, 0.025f, out acc))
-                    {
-                        Debug.Log("Test Complete!");
-                    }
-                    else
-                    {
-                        Debug.Log("Error: Accuracy is not the same. Accuracy in C# " + acc + " accuracy in MLP_Complete " + accuracyPropio);
-                    }
-                }
-            }
 
-            Debug.Log("Parameters loaded " + mlpParameters);
+    public bool FeedForwardTest(string csv, float accuracy, float aceptThreshold, out float acc)
+    {
+        Tuple<List<Parameters>, List<Labels>> tuple = Record.ReadFromCsv(csv, true);
+        List<Parameters> parameters = tuple.Item1;
+        List<Labels> labels = tuple.Item2;
+        int goals = 0;
+        for (int i = 0; i < parameters.Count; i++)
+        {
+            float[] input = parameters[i].ConvertToFloatArrat();
+            float[] a_input = input.Where((value, index) => !indicesToRemove.Contains(index)).ToArray();
+            a_input = standardScaler.Transform(a_input);
+           string outputs = FeedForward(a_input);
+            Labels label = Predict(outputs);
+           
+            if (label == labels[i])
+                goals++;
         }
+
+        acc = goals / ((float)parameters.Count);
+
+        float diff = Mathf.Abs(acc - accuracy);
+        Debug.Log("Accuracy " + acc + " Accuracy espected " + accuracy + " goals " + goals + " Examples " + parameters.Count + " Difference " + diff);
+        return diff < aceptThreshold;
     }
 
-    public KartGame.KartSystems.InputData AgentInput()
+    public float[] ConvertPerceptionToInput(Perception p, Transform transform)
     {
-        float[] X, outputsMLP;
-        float[,] outputsMLPPropio;
+        Parameters parameters = Record.ReadParameters(9, Time.timeSinceLevelLoad, p, transform);
+        float[] input = parameters.ConvertToFloatArrat();
+        float[] a_input = input.Where((value, index) => !indicesToRemove.Contains(index)).ToArray();
+        a_input = standardScaler.Transform(a_input);
+        return a_input;
+    }
+
+    public float CalculateDistance(float[] inputFeatures, float[] dataFeatures)
+    {
+        float sum = 0;
+        for (int i = 0; i < inputFeatures.Length; i++)
+        {
+            sum += (float)Math.Pow(inputFeatures[i] - dataFeatures[i], knnParameters.power);
+        }
+        return (float)Math.Pow(sum, (1.0f / knnParameters.power));
+    }
+
+    // TODO Implement FeedForward
+    public string FeedForward(float[] a_input)
+    {
+        var  distances = trainingData.Select(t =>
+             new
+             {
+                 Distance = CalculateDistance(a_input, t.Item1),
+                 Label = t.Item2
+             })
+             .OrderBy(t => t.Distance)
+             .Take(knnParameters.nNeighbours);
+
+        return distances.GroupBy(t => t.Label)
+            .OrderByDescending(g => g.Count())
+            .First().Key; ;
+
+    }
+
+
+    //TODO: implement the conversion from index to actions. You may need to implement several ways of
+    //transforming the data if you play in different ways. You must take into account how many classes
+    //you have used, and how One Hot Encoder has encoded them and this may vary if you change the training
+    //data.
+    public Labels ConvertIndexToLabel(int index)
+    {
         Labels label = Labels.NONE;
 
-        switch (model)
+        switch (index)
         {
-            case ModelType.MLP:
-                X = this.mlpModel.ConvertPerceptionToInput(perception, this.transform);
-                outputsMLP = this.mlpModel.FeedForward(X);
-                label = this.mlpModel.Predict(outputsMLP);
+            case 1:
+                label = Labels.ACCELERATE;
                 break;
-            case ModelType.MLPPropio:
-                X = this.mlpModelPropio.ConvertPerceptionToInput(perception, this.transform);
-                outputsMLPPropio = this.mlpModelPropio.FeedForward(X);
-                label = this.mlpModelPropio.Predict(outputsMLPPropio);
+            case 2:
+                label = Labels.RIGHT_ACCELERATE;
                 break;
+            case 3:
+                label = Labels.LEFT_ACCELERATE;
+                break;
+
         }
-        KartGame.KartSystems.InputData input = Record.ConvertLabelToInput(label);
-        return input;
+        return label;
     }
-
-    public static string TrimpBrackers(string val)
+    public Labels ConvertStringToLabel(string index)
     {
-        val = val.Trim();
-        val = val.Substring(1);
-        val = val.Substring(0, val.Length - 1);
-        return val;
-    }
-
-    public static int[] SplitWithColumInt(string val)
-    {
-        val = val.Trim();
-        string[] values = val.Split(",");
-        int[] result = new int[values.Length];
-        for (int i = 0; i < values.Length; i++)
+        Labels label = Labels.NONE;
+        
+        switch (index)
         {
-            values[i] = values[i].Trim();
-            if (values[i].StartsWith("'"))
-                values[i] = values[i].Substring(1);
-            if (values[i].EndsWith("'"))
-                values[i] = values[i].Substring(0, values[i].Length - 1);
-            result[i] = int.Parse(values[i]);
+            case "ACCELERATE":
+                label = Labels.ACCELERATE;
+                break;
+            case "RIGHT_ACCELERATE":
+                label = Labels.RIGHT_ACCELERATE;
+                break;
+            case "LEFT_ACCELERATE":
+                label = Labels.LEFT_ACCELERATE;
+                break;
+
         }
-        return result;
+        return label;
     }
 
-    public static float[] SplitWithColumFloat(string val)
+    public Labels Predict( string output)
     {
-        val = val.Trim();
-        string[] values = val.Split(",");
-        float[] result = new float[values.Length];
-        for (int i = 0; i < values.Length; i++)
-        {
-            result[i] = float.Parse(values[i], System.Globalization.CultureInfo.InvariantCulture);
-        }
-        return result;
+       
+
+        return ConvertStringToLabel(output);
     }
 
-    public static MLPParameters LoadParameters(string file)
+    public int GetIndexMaxValue(float[,] output, out float max)
     {
-        string[] lines = file.Split("\n");
-        int num_layers = 0;
-        MLPParameters mlpParameters = null;
-        int currentParameter = -1;
-        int[] currentDimension = null;
-        bool coefficient = false;
-        for (int i = 0; i < lines.Length; i++)
+        max = output[0, 0];
+        int index = 0;
+        for (int i = 0; i < output.GetLength(0); i++)
         {
-            string line = lines[i];
-            line = line.Trim();
-            if (line != "")
+            for (int j = 0; j < output.GetLength(1); ++j)
             {
-                string[] nameValue = line.Split(":");
-                string name = nameValue[0];
-                string val = nameValue[1];
-                if (name == "num_layers")
+                if (output[i, j] > max)
                 {
-                    num_layers = int.Parse(val);
-                    mlpParameters = new MLPParameters(num_layers);
+                    max = output[i, j];
+                    index = j;
                 }
-                else
+            }
+        }
+        return index;
+    }
+
+}
+
+    public class MLAgent : MonoBehaviour
+    {
+        public enum ModelType { MLP = 0, MLPPropio = 1, KNN = 2 }
+        public TextAsset text;
+        public TextAsset textPropio;
+        public ModelType model;
+        public bool agentEnable;
+        public int[] indexToRemove;
+        public TextAsset standardScaler;
+        public TextAsset standardScalerPropio;
+        public bool testFeedForward;
+        public float accuracy;
+        public float accuracyPropio;
+        public float accuracyKNN;
+        public TextAsset trainingCsv;
+        public TextAsset trainingCsvPropio;
+
+        private MLPParameters mlpParameters;
+        private MLPModel mlpModel;
+        private MLPModelPropio mlpModelPropio;
+        private Perception perception;
+
+        private KNNParameters knnParameters;
+        private KNNModelPropio knnModel;
+        public TextAsset textKNNpropio;
+
+        private void Awake()
+        {
+            perception = GetComponent<Perception>();
+            if (perception == null)
+            {
+                Debug.LogError("Perception component not assigned");
+            }
+        }
+
+        void Start()
+        {
+            if (agentEnable)
+            {
+                if (model == ModelType.MLP)
                 {
-                    if (num_layers <= 0)
-                        Debug.LogError("Format error: First line must be num_layers");
+                    mlpParameters = LoadParameters(text.text);
+                    StandardScaler ss = new StandardScaler(standardScaler.text);
+                    mlpModel = new MLPModel(mlpParameters, indexToRemove, ss);
+                    if (testFeedForward)
+                    {
+                        float acc;
+                        if (mlpModel.FeedForwardTest(trainingCsv.text, accuracy, 0.025f, out acc))
+                        {
+                            Debug.Log("Test Complete!");
+                        }
+                        else
+                        {
+                            Debug.Log("Error: Accuracy is not the same. Accuracy in C# " + acc + " accuracy in sklearn " + accuracy);
+                        }
+                    }
+                    Debug.Log("Parameters loaded " + mlpParameters);
+                }
+                else if (model == ModelType.MLPPropio)
+                {
+                    mlpParameters = LoadParameters(textPropio.text);
+                    StandardScaler ss = new StandardScaler(standardScalerPropio.text);
+                    mlpModelPropio = new MLPModelPropio(mlpParameters, indexToRemove, ss);
+                    if (testFeedForward)
+                    {
+                        float acc;
+                        if (mlpModelPropio.FeedForwardTest(trainingCsvPropio.text, accuracyPropio, 0.025f, out acc))
+                        {
+                            Debug.Log("Test Complete!");
+                        }
+                        else
+                        {
+                            Debug.Log("Error: Accuracy is not the same. Accuracy in C# " + acc + " accuracy in MLP_Complete " + accuracyPropio);
+                        }
+                    }
+                    Debug.Log("Parameters loaded " + mlpParameters);
+                }
+                else if (model == ModelType.KNN)
+                {
+                    
+
+                    knnParameters = LoadKNNParameters(textKNNpropio.text);
+                    StandardScaler ss = new StandardScaler(standardScalerPropio.text);
+                    knnModel = new KNNModelPropio(knnParameters, indexToRemove, ss, trainingCsvPropio.text , indexToRemove);
+                    if (testFeedForward)
+                    {
+                        float acc;
+                        if (knnModel.FeedForwardTest(trainingCsvPropio.text, accuracyKNN, 0.025f, out acc))
+                        {
+                            Debug.Log("Test Complete!");
+                        }
+                        else
+                        {
+                            Debug.Log("Error: Accuracy is not the same. Accuracy in C# " + acc + " accuracy in KNN " + accuracyKNN);
+                        }
+                    }
+                }
+                
+               
+            }
+        }
+
+        public KartGame.KartSystems.InputData AgentInput()
+        {
+            float[] X, outputsMLP;
+            float[,] outputsMLPPropio;
+            string outputKNN;
+            Labels label = Labels.NONE;
+
+            switch (model)
+            {
+                case ModelType.MLP:
+                    X = this.mlpModel.ConvertPerceptionToInput(perception, this.transform);
+                    outputsMLP = this.mlpModel.FeedForward(X);
+                    label = this.mlpModel.Predict(outputsMLP);
+                    break;
+                case ModelType.MLPPropio:
+                    X = this.mlpModelPropio.ConvertPerceptionToInput(perception, this.transform);
+                    outputsMLPPropio = this.mlpModelPropio.FeedForward(X);
+                    label = this.mlpModelPropio.Predict(outputsMLPPropio);
+                    break;
+            case ModelType.KNN:
+                X = this.knnModel.ConvertPerceptionToInput(perception, this.transform);
+                outputKNN = this.knnModel.FeedForward(X);
+                label = this.knnModel.Predict(outputKNN);
+                break;
+
+        }
+            KartGame.KartSystems.InputData input = Record.ConvertLabelToInput(label);
+            return input;
+        }
+
+        public static string TrimpBrackers(string val)
+        {
+            val = val.Trim();
+            val = val.Substring(1);
+            val = val.Substring(0, val.Length - 1);
+            return val;
+        }
+
+        public static int[] SplitWithColumInt(string val)
+        {
+            val = val.Trim();
+            string[] values = val.Split(",");
+            int[] result = new int[values.Length];
+            for (int i = 0; i < values.Length; i++)
+            {
+                values[i] = values[i].Trim();
+                if (values[i].StartsWith("'"))
+                    values[i] = values[i].Substring(1);
+                if (values[i].EndsWith("'"))
+                    values[i] = values[i].Substring(0, values[i].Length - 1);
+                result[i] = int.Parse(values[i]);
+            }
+            return result;
+        }
+
+        public static float[] SplitWithColumFloat(string val)
+        {
+            val = val.Trim();
+            string[] values = val.Split(",");
+            float[] result = new float[values.Length];
+            for (int i = 0; i < values.Length; i++)
+            {
+                result[i] = float.Parse(values[i], System.Globalization.CultureInfo.InvariantCulture);
+            }
+            return result;
+        }
+
+        public static MLPParameters LoadParameters(string file)
+        {
+            string[] lines = file.Split("\n");
+            int num_layers = 0;
+            MLPParameters mlpParameters = null;
+            int currentParameter = -1;
+            int[] currentDimension = null;
+            bool coefficient = false;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i];
+                line = line.Trim();
+                if (line != "")
+                {
+                    string[] nameValue = line.Split(":");
+                    string name = nameValue[0];
+                    string val = nameValue[1];
+                    if (name == "num_layers")
+                    {
+                        num_layers = int.Parse(val);
+                        mlpParameters = new MLPParameters(num_layers);
+                    }
                     else
                     {
-                        if (name == "parameter")
-                            currentParameter = int.Parse(val);
-                        else if (name == "dims")
+                        if (num_layers <= 0)
+                            Debug.LogError("Format error: First line must be num_layers");
+                        else
                         {
-                            val = TrimpBrackers(val);
-                            currentDimension = SplitWithColumInt(val);
-                        }
-                        else if (name == "name")
-                        {
-                            if (val.StartsWith("coefficient"))
+                            if (name == "parameter")
+                                currentParameter = int.Parse(val);
+                            else if (name == "dims")
                             {
-                                coefficient = true;
-                                int index = currentParameter / 2;
-                                mlpParameters.CreateCoeficient(currentParameter, currentDimension[0], currentDimension[1]);
+                                val = TrimpBrackers(val);
+                                currentDimension = SplitWithColumInt(val);
                             }
-                            else
+                            else if (name == "name")
                             {
-                                coefficient = false;
-                                mlpParameters.CreateIntercept(currentParameter, currentDimension[1]);
-                            }
-
-                        }
-                        else if (name == "values")
-                        {
-                            val = TrimpBrackers(val);
-                            float[] parameters = SplitWithColumFloat(val);
-
-                            for (int index = 0; index < parameters.Length; index++)
-                            {
-                                if (coefficient)
+                                if (val.StartsWith("coefficient"))
                                 {
-                                    int row = index / currentDimension[1];
-                                    int col = index % currentDimension[1];
-                                    mlpParameters.SetCoeficiente(currentParameter, row, col, parameters[index]);
+                                    coefficient = true;
+                                    int index = currentParameter / 2;
+                                    mlpParameters.CreateCoeficient(currentParameter, currentDimension[0], currentDimension[1]);
                                 }
                                 else
                                 {
-                                    mlpParameters.SetIntercept(currentParameter, index, parameters[index]);
+                                    coefficient = false;
+                                    mlpParameters.CreateIntercept(currentParameter, currentDimension[1]);
+                                }
+
+                            }
+                            else if (name == "values")
+                            {
+                                val = TrimpBrackers(val);
+                                float[] parameters = SplitWithColumFloat(val);
+
+                                for (int index = 0; index < parameters.Length; index++)
+                                {
+                                    if (coefficient)
+                                    {
+                                        int row = index / currentDimension[1];
+                                        int col = index % currentDimension[1];
+                                        mlpParameters.SetCoeficiente(currentParameter, row, col, parameters[index]);
+                                    }
+                                    else
+                                    {
+                                        mlpParameters.SetIntercept(currentParameter, index, parameters[index]);
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+            return mlpParameters;
         }
-        return mlpParameters;
+
+        public static KNNParameters LoadKNNParameters(string file)
+        {
+            string[] lines = file.Split("\n");
+            int n_neighbors = 5, p = 2;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i];
+                line = line.Trim();
+                if (line != "")
+                {
+                    string[] nameValue = line.Split(":");
+                    string name = nameValue[0];
+                    string val = nameValue[1];
+                    if (name == "n_neighbors")
+                    {
+                        n_neighbors = int.Parse(val);
+                    }
+                    else if (name == "p")
+                    {
+                        p = int.Parse(val);
+
+                    }
+                }
+            }
+            return new KNNParameters(n_neighbors, p);
+        }
     }
-}
+

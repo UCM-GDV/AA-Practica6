@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using System.Linq;
 
 
 public class Parameters
@@ -227,6 +228,41 @@ public class Record : MonoBehaviour
                 {
                     float value = float.Parse(fields[j], System.Globalization.CultureInfo.InvariantCulture);
                     parameter[j] = value;
+                }
+                paremters.Add(parameter);
+                Labels label;
+                if (!Enum.TryParse<Labels>(fields[fields.Length - 1].Trim(), out label))
+                {
+                    Debug.LogError("La etiqueta " + fields[fields.Length].Trim() + " no es correcta");
+                }
+                labels.Add(label);
+            }
+        }
+        output = new Tuple<List<Parameters>, List<Labels>>(paremters, labels);
+        return output;
+    }
+    public static Tuple<List<Parameters>, List<Labels>> ReadFromCsv(string csv, bool ignoreFirstLine , int[] indicesToRemove)
+    {
+        Tuple<List<Parameters>, List<Labels>> output;
+        List<Parameters> paremters = new List<Parameters>();
+        List<Labels> labels = new List<Labels>();
+        string[] lines = csv.Split("\n");
+        for (int i = ignoreFirstLine ? 1 : 0; i < lines.Length; i++)
+        {
+            if (lines[i].Trim() != "")
+            {
+                string line = lines[i];
+                string[] fields = line.Split(",");
+                Parameters parameter = new Parameters(fields.Length - indicesToRemove.Length - 1);
+                int paramindex = 0;
+                for (int j = 0; j < fields.Length - 1 ; j++)
+                {
+                    if (!indicesToRemove.Contains(j))
+                    {
+                        float value = float.Parse(fields[j], System.Globalization.CultureInfo.InvariantCulture);
+                        parameter[paramindex] = value;
+                        paramindex++;
+                    }
                 }
                 paremters.Add(parameter);
                 Labels label;
