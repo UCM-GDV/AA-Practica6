@@ -26,9 +26,22 @@ def load_data_csv(path,x_columns,y_column):
     return data, X, y
 
 def one_hot_encoding(Y,categories_='auto'):
-    oneHotEncoder=OneHotEncoder(categories=categories_)
-    YEnc=oneHotEncoder.fit_transform(Y.reshape(-1,1)).toarray()
-    return YEnc
+   YEnc = []
+   cero = np.zeros(1)
+   one = np.ones(1)
+   oneHotEncoder=OneHotEncoder(categories=categories_)
+   YEnc=oneHotEncoder.fit_transform(Y.reshape(-1,1)).toarray()
+#Si solo hay una 0 2 clases hay que darle a numpy el formato bien 
+   if len (YEnc[0]) < 3 :
+        encondedY = []
+        for i in range(0, len( YEnc)):
+             if(YEnc[i][0]== 0):
+                 encondedY.append(cero)
+             else:
+                 encondedY.append(one)
+        YEnc = np.array(encondedY)
+    
+   return YEnc
 
 def accuracy(P,Y):
     return accuracy_score(P,Y)

@@ -84,6 +84,7 @@ label_array = ["NONE","ACCELERATE","BRAKE","LEFT_ACCELERATE","RIGHT_ACCELERATE",
 
 x_columns = ["ray1", "ray2", "ray3", "ray4", "ray5", "kartx", "kartz"]
 kartData, X, y = load_data_csv("data/KartData.csv", x_columns, "action")
+#y = kartData["action"].map(lambda x: "NONE" if x == "ACCELERATE" else x ).astype(str)
 
 # Normalizar los datos
 scaler = StandardScaler()

@@ -120,10 +120,19 @@ class MLP_Complete:
 	------
 	p (scalar): the class index with the highest activation value.
     """
-    def predict(self,a3):
-        p = np.argmax(a3, axis=1)
-        return p
+    def binaryMap(self, x):
+        if ((1.0 - x)<0.5):
+            return 1.0
+        else:
+            return 0.0
     
+    def predict(self,a3):
+        if (len(a3[0])>1):
+            p = np.argmax(a3, axis=1)
+        else:
+            p = np.array([[ self.binaryMap(x)  for  x in row] for row in a3])
+        return p
+
     """
     Compute the gradients of both theta matrix parámeters and cost J
 
